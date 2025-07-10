@@ -1,0 +1,409 @@
+{% extends "base.html" %}
+
+{% block page_subtitle %}
+Dashboard avanzata con grafici e statistiche dettagliate
+{% endblock %}
+
+{% block content %}
+<!-- Charts Grid -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
+    <!-- Timeline Chart -->
+    <div class="card">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Timeline Articoli (30 giorni)</h3>
+            <p class="text-sm text-gray-600 mt-1">Numero di articoli aggregati per giorno</p>
+        </div>
+        <div class="p-6">
+            <canvas id="timelineChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+    
+    <!-- Sources Performance -->
+    <div class="card">
+        <div class="p-6 border-b border-gray-200">
+            <h3 class="text-lg font-semibold text-gray-900">Performance Sources</h3>
+            <p class="text-sm text-gray-600 mt-1">Top 10 sources per numero di articoli</p>
+        </div>
+        <div class="p-6">
+            <canvas id="sourcesChart" width="400" height="200"></canvas>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Word Cloud Container -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Word Cloud Tags</h3>
+                        <p class="text-sm text-gray-600 mt-1">I tag più frequenti negli articoli</p>
+                    </div>
+                    <button onclick="refreshWordCloud()" class="text-blue-600 hover:text-blue-700 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Aggiorna
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div id="wordcloud" class="w-full h-80 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-500">Caricamento word cloud...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Stats Sidebar -->
+    <div class="space-y-6">
+        <!-- Languages Distribution -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Distribuzione Lingue</h3>
+            </div>
+            <div class="p-6">
+                <canvas id="languagesChart" width="300" height="200"></canvas>
+            </div>
+        </div>
+        
+        <!-- Quick Stats -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Statistiche Rapide</h3>
+            </div>
+            <div class="p-6 space-y-4">
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Articoli oggi:</span>
+                    <span id="todayCount" class="font-semibold text-gray-900">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Media parole:</span>
+                    <span id="avgWords" class="font-semibold text-gray-900">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Sources attive:</span>
+                    <span id="activeSources" class="font-semibold text-gray-900">-</span>
+                </div>
+                <div class="flex items-center justify-between">
+                    <span class="text-gray-600">Ultimo scraping:</span>
+                    <span id="lastScrape" class="font-semibold text-gray-900">-</span>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Export Actions -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Export Dati</h3>
+            </div>
+            <div class="p-6 space-y-3">
+                <button onclick="exportAnalytics('csv')" class="w-full bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-file-csv mr-2"></i>
+                    Export CSV
+                </button>
+                <button onclick="exportAnalytics('json')" class="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-file-code mr-2"></i>
+                    Export JSON
+                </button>
+                <button onclick="generateReport()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-file-pdf mr-2"></i>
+                    Report PDF
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Real-time Updates -->
+<div class="mt-8">
+    <div class="card">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Monitoraggio Real-time</h3>
+                <div class="flex items-center space-x-2">
+                    <div id="realtimeStatus" class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                    <span class="text-sm text-gray-600">Aggiornamento automatico</span>
+                </div>
+            </div>
+        </div>
+        <div class="p-6">
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-blue-600" id="realtimeArticles">0</div>
+                    <div class="text-sm text-gray-600">Articoli oggi</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-green-600" id="realtimeSources">0</div>
+                    <div class="text-sm text-gray-600">Sources attive</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-purple-600" id="realtimeTags">0</div>
+                    <div class="text-sm text-gray-600">Tag unici</div>
+                </div>
+                <div class="text-center">
+                    <div class="text-2xl font-bold text-orange-600" id="realtimeErrors">0</div>
+                    <div class="text-sm text-gray-600">Errori</div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dati dal backend
+const timelineData = {{ timeline | tojsonfilter | safe }};
+const sourcesData = {{ sources_performance | tojsonfilter | safe }};
+const tagsData = {{ top_tags | tojsonfilter | safe }};
+const languagesData = {{ languages | tojsonfilter | safe }};
+
+// Timeline Chart
+const timelineCtx = document.getElementById('timelineChart').getContext('2d');
+const timelineChart = new Chart(timelineCtx, {
+    type: 'line',
+    data: {
+        labels: timelineData.map(item => {
+            const date = new Date(item.date);
+            return date.toLocaleDateString('it-IT', { month: 'short', day: 'numeric' });
+        }),
+        datasets: [{
+            label: 'Articoli',
+            data: timelineData.map(item => item.articles),
+            borderColor: '#3b82f6',
+            backgroundColor: 'rgba(59, 130, 246, 0.1)',
+            borderWidth: 2,
+            fill: true,
+            tension: 0.4
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            }
+        }
+    }
+});
+
+// Sources Performance Chart
+const sourcesCtx = document.getElementById('sourcesChart').getContext('2d');
+const sourcesChart = new Chart(sourcesCtx, {
+    type: 'bar',
+    data: {
+        labels: sourcesData.slice(0, 8).map(item => {
+            const name = item.source_name;
+            return name.length > 15 ? name.substring(0, 15) + '...' : name;
+        }),
+        datasets: [{
+            label: 'Articoli',
+            data: sourcesData.slice(0, 8).map(item => item.articles_count),
+            backgroundColor: [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444',
+                '#8b5cf6', '#06b6d4', '#84cc16', '#f97316'
+            ],
+            borderRadius: 6
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                display: false
+            }
+        },
+        scales: {
+            y: {
+                beginAtZero: true,
+                grid: {
+                    color: 'rgba(0, 0, 0, 0.05)'
+                }
+            },
+            x: {
+                grid: {
+                    display: false
+                }
+            }
+        }
+    }
+});
+
+// Languages Chart
+const languagesCtx = document.getElementById('languagesChart').getContext('2d');
+const languagesChart = new Chart(languagesCtx, {
+    type: 'doughnut',
+    data: {
+        labels: languagesData.map(item => item[0].toUpperCase()),
+        datasets: [{
+            data: languagesData.map(item => item[1]),
+            backgroundColor: [
+                '#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'
+            ],
+            borderWidth: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+            legend: {
+                position: 'bottom'
+            }
+        }
+    }
+});
+
+// Word Cloud (simulato con div)
+function renderWordCloud() {
+    const container = document.getElementById('wordcloud');
+    container.innerHTML = '';
+    
+    if (tagsData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-tags text-gray-300 text-4xl mb-3"></i>
+                <p class="text-gray-500">Nessun tag disponibile</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const maxFreq = Math.max(...tagsData.map(tag => tag[1]));
+    const minSize = 12;
+    const maxSize = 32;
+    
+    tagsData.slice(0, 30).forEach(([name, freq]) => {
+        const size = minSize + (freq / maxFreq) * (maxSize - minSize);
+        const hue = Math.random() * 360;
+        
+        const tagElement = document.createElement('span');
+        tagElement.textContent = name;
+        tagElement.className = 'inline-block m-1 p-1 cursor-pointer hover:opacity-80 transition-opacity';
+        tagElement.style.fontSize = `${size}px`;
+        tagElement.style.color = `hsl(${hue}, 70%, 50%)`;
+        tagElement.style.fontWeight = '600';
+        
+        tagElement.onclick = () => {
+            window.location.href = `/web/articles?search=${encodeURIComponent(name)}`;
+        };
+        
+        container.appendChild(tagElement);
+    });
+}
+
+// Initialize word cloud
+renderWordCloud();
+
+// Real-time updates
+async function updateRealTimeStats() {
+    try {
+        const response = await fetch('/statistics/health');
+        if (response.ok) {
+            const data = await response.json();
+            
+            document.getElementById('realtimeArticles').textContent = 
+                formatNumber(data.recent_activity.articles_last_24h || 0);
+            document.getElementById('realtimeSources').textContent = 
+                formatNumber(data.total_sources || 0);
+            document.getElementById('realtimeErrors').textContent = 
+                formatNumber(data.error_summary.sources_with_errors || 0);
+        }
+    } catch (error) {
+        console.error('Real-time update failed:', error);
+    }
+}
+
+// Load quick stats
+async function loadQuickStats() {
+    try {
+        const response = await fetch('/statistics/dashboard');
+        if (response.ok) {
+            const data = await response.json();
+            
+            document.getElementById('todayCount').textContent = 
+                formatNumber(data.article_stats.articles_today);
+            document.getElementById('avgWords').textContent = 
+                data.article_stats.avg_words_per_article;
+            document.getElementById('activeSources').textContent = 
+                formatNumber(data.source_stats.active_sources);
+            
+            if (data.last_scrape) {
+                const date = new Date(data.last_scrape);
+                document.getElementById('lastScrape').textContent = 
+                    date.toLocaleString('it-IT');
+            } else {
+                document.getElementById('lastScrape').textContent = 'Mai';
+            }
+        }
+    } catch (error) {
+        console.error('Failed to load quick stats:', error);
+    }
+}
+
+// Export functions
+async function exportAnalytics(format) {
+    try {
+        showToast(`Preparazione export ${format.toUpperCase()}...`, 'info');
+        
+        const response = await fetch(`/statistics/export/csv?days=30`, {
+            method: 'GET'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (format === 'csv') {
+                downloadCSV(data.data, 'analytics_export.csv');
+            } else {
+                downloadJSON(data, 'analytics_export.json');
+            }
+            
+            showToast(`Export ${format.toUpperCase()} completato!`, 'success');
+        } else {
+            showToast('Errore durante l\'export', 'error');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+function generateReport() {
+    showToast('Funzionalità report PDF in sviluppo', 'info');
+}
+
+function refreshWordCloud() {
+    showToast('Aggiornamento word cloud...', 'info');
+    setTimeout(() => {
+        renderWordCloud();
+        showToast('Word cloud aggiornata!', 'success');
+    }, 1000);
+}
+
+// Initialize
+loadQuickStats();
+updateRealTimeStats();
+
+// Auto-refresh every 30 seconds
+setInterval(updateRealTimeStats, 30000);
+</script>
+{% endblock %}

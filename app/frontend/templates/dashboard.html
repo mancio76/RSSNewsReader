@@ -1,0 +1,275 @@
+{% extends "base.html" %}
+
+{% block page_subtitle %}
+Panoramica generale del sistema di aggregazione news
+{% endblock %}
+
+{% block content %}
+<!-- Stats cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Articoli Totali</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ "{:,}".format(total_articles) }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-newspaper text-blue-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-green-600 font-medium">+{{ recent_articles }}</span>
+            <span class="text-gray-600 ml-1">negli ultimi 7 giorni</span>
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Sources Totali</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_sources }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-rss text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-green-600 font-medium">{{ active_sources }}</span>
+            <span class="text-gray-600 ml-1">attive</span>
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Top Source</p>
+                <p class="text-lg font-bold text-gray-900 mt-1">
+                    {% if top_sources %}
+                        {{ top_sources[0][0][:20] }}{% if top_sources[0][0]|length > 20 %}...{% endif %}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-trophy text-purple-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            {% if top_sources %}
+                <span class="text-purple-600 font-medium">{{ top_sources[0][1] }}</span>
+                <span class="text-gray-600 ml-1">articoli</span>
+            {% endif %}
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Status Sistema</p>
+                <p class="text-lg font-bold text-green-600 mt-1">Operativo</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-check-circle text-green-600 text-xl"></i>
+            </div>
+        </div>
+        <div class="mt-4 flex items-center text-sm">
+            <div class="w-2 h-2 bg-green-400 rounded-full animate-pulse mr-2"></div>
+            <span class="text-gray-600">Tutti i servizi attivi</span>
+        </div>
+    </div>
+</div>
+
+<!-- Main content grid -->
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Articoli recenti -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Articoli Recenti</h3>
+                    <a href="/web/articles" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        Vedi tutti <i class="fas fa-arrow-right ml-1"></i>
+                    </a>
+                </div>
+            </div>
+            <div class="divide-y divide-gray-200">
+                {% for article in latest_articles %}
+                <div class="p-6 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-start space-x-4">
+                        <div class="flex-shrink-0">
+                            <div class="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-newspaper text-blue-600"></i>
+                            </div>
+                        </div>
+                        <div class="flex-1 min-w-0">
+                            <div class="flex items-center justify-between mb-2">
+                                <p class="text-sm text-gray-600">{{ article.source.name }}</p>
+                                <time class="text-xs text-gray-500">
+                                    {{ article.scraped_date if article.scraped_date else 'N/A' }}
+                                </time>
+                            </div>
+                            <h4 class="text-sm font-semibold text-gray-900 mb-2 line-clamp-2">
+                                <a href="/web/article/{{ article.id }}" class="hover:text-blue-600 transition-colors">
+                                    {{ article.title }}
+                                </a>
+                            </h4>
+                            {% if article.summary %}
+                            <p class="text-sm text-gray-600 line-clamp-2">
+                                {{ article.summary[:150] }}{% if article.summary|length > 150 %}...{% endif %}
+                            </p>
+                            {% endif %}
+                            <div class="flex items-center justify-between mt-3">
+                                <div class="flex items-center space-x-4 text-xs text-gray-500">
+                                    {% if article.author %}
+                                    <span><i class="fas fa-user mr-1"></i>{{ article.author }}</span>
+                                    {% endif %}
+                                    {% if article.word_count %}
+                                    <span><i class="fas fa-file-alt mr-1"></i>{{ article.word_count }} parole</span>
+                                    {% endif %}
+                                </div>
+                                <a href="/web/article/{{ article.id }}" class="text-blue-600 hover:text-blue-700 text-sm">
+                                    Leggi <i class="fas fa-external-link-alt ml-1"></i>
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not latest_articles %}
+                <div class="p-12 text-center">
+                    <i class="fas fa-newspaper text-gray-300 text-4xl mb-4"></i>
+                    <p class="text-gray-500">Nessun articolo disponibile</p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="space-y-8">
+        <!-- Top Sources -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Top Sources</h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    {% for source_name, count in top_sources %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-rss text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">
+                                    {{ source_name[:25] }}{% if source_name|length > 25 %}...{% endif %}
+                                </p>
+                            </div>
+                        </div>
+                        <span class="text-sm font-bold text-gray-600">{{ count }}</span>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not top_sources %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-chart-bar text-gray-300 text-3xl mb-3"></i>
+                        <p class="text-gray-500 text-sm">Nessun dato disponibile</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Top Tags -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Top Tags</h3>
+                    <a href="/web/analytics" class="text-blue-600 hover:text-blue-700 text-sm">
+                        Analytics
+                    </a>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="flex flex-wrap gap-2">
+                    {% for tag in top_tags %}
+                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm bg-blue-100 text-blue-800">
+                        {{ tag.name }}
+                        <span class="ml-2 text-xs bg-blue-200 rounded-full px-2 py-0.5">{{ tag.frequency }}</span>
+                    </span>
+                    {% endfor %}
+                    
+                    {% if not top_tags %}
+                    <div class="text-center py-8 w-full">
+                        <i class="fas fa-tags text-gray-300 text-3xl mb-3"></i>
+                        <p class="text-gray-500 text-sm">Nessun tag disponibile</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Azioni Rapide</h3>
+            </div>
+            <div class="p-6 space-y-3">
+                <button onclick="triggerScraping()" class="w-full btn-primary flex items-center justify-center">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Avvia Scraping
+                </button>
+                <a href="/web/sources" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Aggiungi Source
+                </a>
+                <a href="/web/analytics" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Vedi Analytics
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+async function triggerScraping() {
+    try {
+        showToast('Avvio scraping in corso...', 'info');
+        
+        const response = await fetch('/sources/scrape', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({})
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Scraping completato: ${result.total_articles} articoli trovati`, 'success');
+            
+            // Ricarica la pagina dopo 2 secondi
+            setTimeout(() => {
+                location.reload();
+            }, 2000);
+        } else {
+            showToast('Errore durante lo scraping', 'error');
+        }
+    } catch (error) {
+        console.error('Error:', error);
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Auto-refresh stats ogni 30 secondi
+setInterval(() => {
+    // Potresti implementare un refresh parziale dei dati via AJAX
+    console.log('Auto-refresh would happen here');
+}, 30000);
+</script>
+{% endblock %}

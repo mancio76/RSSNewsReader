@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="it" class="h-full">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{{ page_title }} - RSSNewsReader{% endblock %}</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    <!-- Chart.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    
+    <!-- Custom styles inspired by OpenEconomics -->
+    <style>
+        /* Color palette simile a OpenEconomics */
+        :root {
+            --primary-blue: #1e40af;
+            --primary-blue-light: #3b82f6;
+            --primary-blue-dark: #1e3a8a;
+            --accent-blue: #0ea5e9;
+            --gray-50: #f8fafc;
+            --gray-100: #f1f5f9;
+            --gray-200: #e2e8f0;
+            --gray-300: #cbd5e1;
+            --gray-400: #94a3b8;
+            --gray-500: #64748b;
+            --gray-600: #475569;
+            --gray-700: #334155;
+            --gray-800: #1e293b;
+            --gray-900: #0f172a;
+        }
+        
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+            background-color: var(--gray-50);
+        }
+        
+        .sidebar {
+            background: linear-gradient(180deg, var(--primary-blue) 0%, var(--primary-blue-dark) 100%);
+            box-shadow: 4px 0 20px rgba(30, 64, 175, 0.1);
+        }
+        
+        .nav-item {
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .nav-item:hover {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-radius: 8px;
+        }
+        
+        .nav-item.active {
+            background-color: rgba(255, 255, 255, 0.15);
+            border-radius: 8px;
+            border-left: 4px solid white;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            border: 1px solid var(--gray-200);
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .card:hover {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+            transform: translateY(-1px);
+        }
+        
+        .stat-card {
+            background: linear-gradient(135deg, white 0%, var(--gray-50) 100%);
+            border: 1px solid var(--gray-200);
+        }
+        
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--primary-blue-light) 100%);
+            color: white;
+            border: none;
+            border-radius: 8px;
+            padding: 10px 20px;
+            font-weight: 600;
+            transition: all 0.2s ease-in-out;
+        }
+        
+        .btn-primary:hover {
+            background: linear-gradient(135deg, var(--primary-blue-dark) 0%, var(--primary-blue) 100%);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(30, 64, 175, 0.3);
+        }
+        
+        .header-gradient {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+        }
+        
+        .text-gradient {
+            background: linear-gradient(135deg, var(--primary-blue) 0%, var(--accent-blue) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        
+        .content-area {
+            min-height: calc(100vh - 4rem);
+        }
+        
+        /* Scrollbar personalizzata */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        ::-webkit-scrollbar-track {
+            background: var(--gray-100);
+        }
+        
+        ::-webkit-scrollbar-thumb {
+            background: var(--gray-400);
+            border-radius: 3px;
+        }
+        
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--gray-500);
+        }
+    </style>
+    
+    {% block extra_head %}{% endblock %}
+</head>
+<body class="h-full bg-gray-50">
+    <div class="flex h-screen">
+        <!-- Sidebar -->
+        <div class="sidebar w-64 flex-shrink-0 flex flex-col">
+            <!-- Logo -->
+            <div class="p-6">
+                <div class="flex items-center space-x-3">
+                    <div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center">
+                        <i class="fas fa-rss text-blue-600 text-xl"></i>
+                    </div>
+                    <div>
+                        <h1 class="text-white font-bold text-lg">RSSNewsReader</h1>
+                        <p class="text-blue-200 text-sm">News Aggregator</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Navigation -->
+            <nav class="flex-1 px-4 pb-4">
+                <ul class="space-y-2">
+                    <li>
+                        <a href="/web/" class="nav-item {% if request.url.path == '/web/' %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-tachometer-alt mr-3"></i>
+                            Dashboard
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/web/articles" class="nav-item {% if '/articles' in request.url.path %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-newspaper mr-3"></i>
+                            Articoli
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/web/sources" class="nav-item {% if '/sources' in request.url.path %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-rss mr-3"></i>
+                            Sources
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/web/analytics" class="nav-item {% if '/analytics' in request.url.path %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-chart-line mr-3"></i>
+                            Analytics
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/web/search" class="nav-item {% if '/search' in request.url.path %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-search mr-3"></i>
+                            Ricerca
+                        </a>
+                    </li>
+                    <li>
+                        <a href="/web/settings" class="nav-item {% if '/settings' in request.url.path %}active{% endif %} flex items-center px-4 py-3 text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors">
+                            <i class="fas fa-cog mr-3"></i>
+                            Impostazioni
+                        </a>
+                    </li>
+                </ul>
+                
+                <!-- API Links -->
+                <div class="mt-8 pt-4 border-t border-blue-400 border-opacity-30">
+                    <p class="text-blue-200 text-xs uppercase tracking-wide font-semibold mb-3">API</p>
+                    <ul class="space-y-2">
+                        <li>
+                            <a href="/docs" target="_blank" class="nav-item flex items-center px-4 py-2 text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-book mr-3"></i>
+                                Documentazione
+                            </a>
+                        </li>
+                        <li>
+                            <a href="/health" target="_blank" class="nav-item flex items-center px-4 py-2 text-blue-200 hover:text-white hover:bg-white hover:bg-opacity-10 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-heartbeat mr-3"></i>
+                                Health Check
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+            </nav>
+        </div>
+        
+        <!-- Main content -->
+        <div class="flex-1 flex flex-col overflow-hidden">
+            <!-- Top header -->
+            <header class="bg-white border-b border-gray-200 px-6 py-4">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h2 class="text-2xl font-bold text-gray-900">{{ page_title }}</h2>
+                        <p class="text-gray-600 text-sm mt-1">{% block page_subtitle %}{% endblock %}</p>
+                    </div>
+                    
+                    <div class="flex items-center space-x-4">
+                        <!-- Search bar -->
+                        <div class="relative">
+                            <form action="/web/search" method="get" class="flex">
+                                <input 
+                                    type="text" 
+                                    name="q" 
+                                    placeholder="Cerca articoli..." 
+                                    class="w-64 px-4 py-2 border border-gray-300 rounded-l-lg focus:ring-blue-500 focus:border-blue-500"
+                                    value="{{ request.query_params.get('q', '') }}"
+                                >
+                                <button type="submit" class="px-4 py-2 bg-blue-600 text-white rounded-r-lg hover:bg-blue-700 focus:ring-blue-500">
+                                    <i class="fas fa-search"></i>
+                                </button>
+                            </form>
+                        </div>
+                        
+                        <!-- Status indicator -->
+                        <div class="flex items-center space-x-2">
+                            <div class="w-3 h-3 bg-green-400 rounded-full animate-pulse"></div>
+                            <span class="text-sm text-gray-600">Sistema attivo</span>
+                        </div>
+                    </div>
+                </div>
+            </header>
+            
+            <!-- Page content -->
+            <main class="flex-1 overflow-auto">
+                <div class="content-area p-6">
+                    {% block content %}{% endblock %}
+                </div>
+            </main>
+        </div>
+    </div>
+    
+    <!-- JavaScript -->
+    <script>
+        // Utility functions
+        function formatDate(dateString) {
+            const date = new Date(dateString);
+            return date.toLocaleDateString('it-IT', {
+                year: 'numeric',
+                month: 'short',
+                day: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+        
+        function formatNumber(num) {
+            return new Intl.NumberFormat('it-IT').format(num);
+        }
+        
+        // Toast notifications
+        function showToast(message, type = 'info') {
+            const toast = document.createElement('div');
+            toast.className = `fixed top-4 right-4 p-4 rounded-lg shadow-lg z-50 ${
+                type === 'success' ? 'bg-green-500' : 
+                type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+            } text-white`;
+            toast.textContent = message;
+            
+            document.body.appendChild(toast);
+            
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        }
+    </script>
+    
+    {% block extra_js %}{% endblock %}
+</body>
+</html>
