@@ -45,10 +45,10 @@ try:
     signal.signal(signal.SIGTERM, signal_handler)
     
     print("🌐 Starting server...")
-    print("📚 Documentation: http://127.0.0.1:8000/docs")
+    print("📚  Documentation: http://127.0.0.1:8000/docs")
     print("❤️  Health check: http://127.0.0.1:8000/health")
-    print("❤️  App: http://127.0.0.1:8000/web")
-    print("🛑 Press Ctrl+C to stop")
+    print("🚀  Application: http://127.0.0.1:8000/web")
+    print("🛑  Press Ctrl+C to stop")
     print("=" * 50)
     
     # Configura uvicorn
