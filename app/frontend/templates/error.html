@@ -1,0 +1,15 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="flex items-center justify-center min-h-64">
+    <div class="text-center">
+        <i class="fas fa-exclamation-triangle text-red-500 text-6xl mb-4"></i>
+        <h1 class="text-2xl font-bold text-gray-900 mb-2">Errore</h1>
+        <p class="text-gray-600 mb-4">{{ error_message }}</p>
+        <a href="/web/" class="btn btn-primary">
+            <i class="fas fa-home icon"></i>
+            Torna alla Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

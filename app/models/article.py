@@ -34,6 +34,12 @@ class Article(Base):
     # Stato
     is_duplicate = Column(Boolean, default=False)
     is_processed = Column(Boolean, default=False)
+
+    # Attributi aggiuntivi
+    sentiment_score = Column(Float, nullable=True)
+    word_count = Column(Integer, nullable=True)
+    language = Column(String(10), nullable=True)
+    is_duplicate = Column(Boolean, default=False)
     
     # Relazioni
     source = relationship("Source", back_populates="articles")

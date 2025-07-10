@@ -1,0 +1,40 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="card">
+        <div class="p-8">
+            <div class="mb-6">
+                <h1 class="text-3xl font-bold text-gray-900 mb-4">{{ article.title }}</h1>
+                <div class="flex items-center space-x-4 text-sm text-gray-500">
+                    <span>{{ article.source.name }}</span>
+                    <span>•</span>
+                    <span>{{ article.published_date or article.scraped_date }}</span>
+                    {% if article.author %}
+                    <span>•</span>
+                    <span>{{ article.author }}</span>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if article.summary %}
+            <div class="bg-blue-50 p-6 rounded-lg mb-6">
+                <h3 class="font-semibold text-blue-900 mb-2">Riassunto</h3>
+                <p class="text-blue-800">{{ article.summary }}</p>
+            </div>
+            {% endif %}
+            
+            <div class="prose max-w-none">
+                {{ article.content | safe }}
+            </div>
+            
+            <div class="mt-8 pt-6 border-t border-gray-200">
+                <a href="{{ article.url }}" target="_blank" class="btn btn-primary">
+                    <i class="fas fa-external-link-alt icon"></i>
+                    Leggi Articolo Originale
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
