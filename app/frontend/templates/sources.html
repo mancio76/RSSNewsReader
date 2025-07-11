@@ -1212,9 +1212,10 @@ document.getElementById('addSourceForm').addEventListener('submit', async functi
 document.getElementById('editSourceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
+    source_id: parseInt(formData.get('source_id'))
     const formData = new FormData(this);
     const data = {
-        source_id: parseInt(formData.get('source_id')),
+        //source_id: source_id,
         name: formData.get('name'),
         base_url: formData.get('base_url'),
         rss_url: formData.get('rss_url') || null,
@@ -1227,7 +1228,7 @@ document.getElementById('editSourceForm').addEventListener('submit', async funct
     try {
         showToast('Modifica source in corso...', 'info');
         
-        const response = await fetch('/sources/', {
+        const response = await fetch(`/sources/${source_id}`, {
             method: 'PUT',
             headers: {
                 'Content-Type': 'application/json'

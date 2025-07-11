@@ -55,7 +55,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
             'summary': article.summary,
             'author': article.author,
             'word_count': article.word_count,
-            'scraped_date': article.scraped_date.strftime('%d/%m/%Y %H:%M') if article.scraped_date else None,
+            'scraped_date': article.scraped_date.strftime('%d/%m/%Y %H:%M') if article.scraped_date is not None else None,
             'source': {
                 'name': article.source.name if article.source else None
             }
@@ -127,8 +127,8 @@ async def articles_list(
             'language': article.language,
             'sentiment_score': article.sentiment_score,
             'is_duplicate': article.is_duplicate,
-            'scraped_date': article.scraped_date.strftime('%d/%m/%Y %H:%M') if article.scraped_date else None,
-            'published_date': article.published_date.strftime('%d/%m/%Y') if article.published_date else None,
+            'scraped_date': article.scraped_date.strftime('%d/%m/%Y %H:%M') if article.scraped_date is not None else None,
+            'published_date': article.published_date.strftime('%d/%m/%Y') if article.published_date is not None else None,
             'source': {
                 'name': article.source.name if article.source else None
             }
@@ -173,7 +173,7 @@ async def article_detail(request: Request, article_id: int, db: Session = Depend
         Article.id != article_id
     ).order_by(desc(Article.scraped_date)).limit(5).all()
     
-    return templates.TemplateResponse("article_detail.html", {
+    return templates.TemplateResponse("article_details.html", {
         "request": request,
         "article": article,
         "tags": tags,
@@ -212,11 +212,11 @@ async def sources_list(request: Request, db: Session = Depends(get_db)):
             'article_count': article_count,
             'recent_articles': recent_articles,
             # Converti datetime in stringhe
-            'last_scraped': source.last_scraped.strftime('%d/%m/%Y %H:%M') if source.last_scraped else None,
-            'last_scraped_iso': source.last_scraped.isoformat() if source.last_scraped else None,
-            'next_scrape': source.next_scrape.isoformat() if source.next_scrape else None,
-            'created_date': source.created_date.isoformat() if source.created_date else None,
-            'updated_date': source.updated_date.isoformat() if source.updated_date else None
+            'last_scraped': source.last_scraped.strftime('%d/%m/%Y %H:%M') if source.last_scraped is not None else None,
+            'last_scraped_iso': source.last_scraped.isoformat() if source.last_scraped is not None else None,
+            'next_scrape': source.next_scrape.isoformat() if source.next_scrape is not None else None,
+            'created_date': source.created_date.isoformat() if source.created_date is not None else None,
+            'updated_date': source.updated_date.isoformat() if source.updated_date is not None else None
         }
         sources.append(source_dict)
     
@@ -314,6 +314,7 @@ async def toggle_source(source_id: int, db: Session = Depends(get_db)):
     """Attiva/disattiva source"""
     
     source = db.query(Source).filter(Source.id == source_id).first()
+        
     if source:
         source.is_active = not source.is_active
         source.updated_date = dt.datetime.now(dt.timezone.utc)

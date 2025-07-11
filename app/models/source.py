@@ -46,7 +46,7 @@ class Source(Base):
             'rss_url': self.rss_url,
             'description': self.description,
             'is_active': self.is_active,
-            'last_scraped': self.last_scraped.isoformat() if self.last_scraped else None,
+            'last_scraped': self.last_scraped.isoformat() if self.last_scraped is not None else None,
             'error_count': self.error_count,
             'update_frequency': self.update_frequency
         }

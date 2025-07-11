@@ -135,7 +135,7 @@ async def article_detail(request: Request, article_id: int, db: Session = Depend
         .order_by(desc(Article.scraped_date))\
         .limit(5).all()
     
-    return templates.TemplateResponse("article_detail.html", {
+    return templates.TemplateResponse("article_details.html", {
         "request": request,
         "article": article,
         "tags": tags,
