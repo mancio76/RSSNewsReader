@@ -11,17 +11,22 @@ Gestisci le fonti RSS e web scraping
         <h2 class="text-2xl font-bold text-gray-900">Sources</h2>
         <p class="text-gray-600 mt-1">{{ sources|length }} sources configurate</p>
     </div>
-    <button onclick="showAddSourceModal()" class="btn-primary">
-        <i class="fas fa-plus mr-2"></i>
-        Aggiungi Source
-    </button>
+    <div class="sources-header-actions flex items-center space-x-2">
+        <!-- I bottoni export/import verranno aggiunti qui da JavaScript -->
+        <button onclick="showAddSourceModal()" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Aggiungi Source
+        </button>
+    </div>
 </div>
 
 <!-- Grid delle sources -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
     <!-- Loop through sources -->
     {% for source in sources %}
-    <div class="card hover:shadow-lg transition-shadow">
+    <div class="card hover:shadow-lg transition-shadow" 
+        data-source-id="{{ source.id }}" 
+        data-source-config="{{ source | tojsonfilter | safe }}">
         <!-- Header source -->
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-start justify-between">
@@ -61,11 +66,11 @@ Gestisci le fonti RSS e web scraping
             <!-- Statistiche -->
             <div class="grid grid-cols-2 gap-4 mb-4">
                 <div class="text-center p-3 bg-gray-50 rounded-lg">
-                    <div class="text-lg font-bold text-gray-900">{{ source.article_count or 0 }}</div>
+                    <div class="text-lg font-bold text-gray-900 article-count">{{ source.article_count or 0 }}</div>
                     <div class="text-xs text-gray-600">Articoli totali</div>
                 </div>
                 <div class="text-center p-3 bg-gray-50 rounded-lg">
-                    <div class="text-lg font-bold text-{% if source.recent_articles > 0 %}green{% else %}gray{% endif %}-600">
+                    <div class="text-lg font-bold text-{% if source.recent_articles > 0 %}green{% else %}gray{% endif %}-600 recent-count">
                         {{ source.recent_articles or 0 }}
                     </div>
                     <div class="text-xs text-gray-600">Ultimi 7 giorni</div>
@@ -106,12 +111,11 @@ Gestisci le fonti RSS e web scraping
         
         <!-- Actions -->
         <div class="px-6 pb-6">
-            <div class="flex space-x-2">
-                <!-- buttons -->
+            <div class="flex space-x-2 actions-div">
                 <button onclick="scrapeSource({{ source.id }})" 
                         class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
                     <i class="fas fa-sync-alt mr-1"></i>
-                    Scrape{{ source.id }}
+                    Scrape
                 </button>
                 <button onclick="editSource({{ source.id }})" 
                         class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
@@ -234,6 +238,7 @@ Gestisci le fonti RSS e web scraping
                 
                 <!-- Attiva subito -->
                 <div class="flex items-center">
+                    <input type="hidden" name="is_active" value="false">
                     <input type="checkbox" id="is_active" name="is_active" checked 
                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                     <label for="is_active" class="ml-2 block text-sm text-gray-700">
@@ -507,6 +512,7 @@ Gestisci le fonti RSS e web scraping
                 
                 <!-- Stato attivo -->
                 <div class="flex items-center">
+                    <input type="hidden" name="is_active" value="false">
                     <input type="checkbox" id="editSourceActive" name="is_active" 
                            class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
                     <label for="editSourceActive" class="ml-2 block text-sm text-gray-700">
@@ -535,6 +541,34 @@ Gestisci le fonti RSS e web scraping
 // Global variables
 let currentScrapingConfig = {};
 let currentEditingSourceId = null;
+
+function setupCheckboxHandling() {
+    // Per il form di aggiunta
+    const addForm = document.getElementById('addSourceForm');
+    addForm.addEventListener('submit', function(e) {
+        const checkbox = this.querySelector('input[name="is_active"][type="checkbox"]');
+        const hidden = this.querySelector('input[name="is_active"][type="hidden"]');
+        
+        if (checkbox.checked) {
+            hidden.disabled = true; // Disabilita hidden se checkbox è checked
+        } else {
+            hidden.disabled = false; // Abilita hidden se checkbox non è checked
+        }
+    });
+    
+    // Per il form di modifica
+    const editForm = document.getElementById('editSourceForm');
+    editForm.addEventListener('submit', function(e) {
+        const checkbox = this.querySelector('input[name="is_active"][type="checkbox"]');
+        const hidden = this.querySelector('input[name="is_active"][type="hidden"]');
+        
+        if (checkbox.checked) {
+            hidden.disabled = true; // Disabilita hidden se checkbox è checked
+        } else {
+            hidden.disabled = false; // Abilita hidden se checkbox non è checked
+        }
+    });
+}
 
 // Toggle source status
 async function toggleSource(sourceId, checkbox) {
@@ -918,9 +952,10 @@ async function deleteSource(sourceId, sourceName) {
 }
 
 // Edit source (placeholder)
-function editSource(sourceId) {
-    showToast('Funzionalità di modifica in sviluppo', 'info');
-}
+// function editSource(sourceId) {
+//     showEditSourceModal();
+//     //showToast('Funzionalità di modifica in sviluppo', 'info');
+// }
 
 // Modal functions
 function showAddSourceModal() {
@@ -932,6 +967,205 @@ function hideAddSourceModal() {
     document.getElementById('addSourceModal').classList.add('hidden');
     document.body.style.overflow = 'auto';
     document.getElementById('addSourceForm').reset();
+}
+
+// 5. AGGIUNTA: Funzione per validare source
+function addValidateButton() {
+    // Aggiungi bottone validate accanto a scrape in ogni source card
+    const sourceCards = document.querySelectorAll('.source-card');
+    sourceCards.forEach(card => {
+        const sourceId = card.dataset.sourceId;
+        const actionsDiv = card.querySelector('.actions-div');
+        
+        const validateBtn = document.createElement('button');
+        validateBtn.onclick = () => validateSource(sourceId);
+        validateBtn.className = 'bg-yellow-100 hover:bg-yellow-200 text-yellow-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm';
+        validateBtn.innerHTML = '<i class="fas fa-check-circle mr-1"></i>Valida';
+        
+        actionsDiv.insertBefore(validateBtn, actionsDiv.lastElementChild);
+    });
+}
+
+// 6. MIGLIORAMENTO: Funzione per refresh parziale delle source senza ricaricare pagina
+async function refreshSourceStats() {
+    try {
+        const response = await fetch('/sources/stats/summary');
+        if (response.ok) {
+            const stats = await response.json();
+            
+            // Aggiorna contatori nella pagina
+            document.querySelectorAll('.source-card').forEach(card => {
+                const sourceId = parseInt(card.dataset.sourceId);
+                const sourceStats = stats.sources?.find(s => s.id === sourceId);
+                
+                if (sourceStats) {
+                    // Aggiorna contatori articoli
+                    const articleCountElement = card.querySelector('.article-count');
+                    if (articleCountElement) {
+                        articleCountElement.textContent = sourceStats.article_count || 0;
+                    }
+                    
+                    const recentCountElement = card.querySelector('.recent-count');
+                    if (recentCountElement) {
+                        recentCountElement.textContent = sourceStats.recent_articles || 0;
+                    }
+                }
+            });
+        }
+    } catch (error) {
+        console.warn('Failed to refresh source stats:', error);
+    }
+}
+
+// 7. AGGIUNTA: Gestione errori più robusta per le operazioni CRUD
+function showDetailedError(error, operation) {
+    let message = `Errore durante ${operation}`;
+    
+    if (error.response) {
+        // Errore HTTP con risposta del server
+        message += `: ${error.response.status} - ${error.response.statusText}`;
+    } else if (error.message) {
+        // Errore JavaScript
+        message += `: ${error.message}`;
+    }
+    
+    showToast(message, 'error');
+    console.error(`${operation} failed:`, error);
+}
+
+// 8. AGGIUNTA: Funzione per esportare configurazione sources
+async function exportSourcesConfig() {
+    try {
+        showToast('Preparazione export configurazione...', 'info');
+        
+        const sources = [];
+        document.querySelectorAll('.source-card').forEach(card => {
+            const sourceData = JSON.parse(card.dataset.sourceConfig || '{}');
+            sources.push(sourceData);
+        });
+        
+        const exportData = {
+            export_date: new Date().toISOString(),
+            sources: sources
+        };
+        
+        const blob = new Blob([JSON.stringify(exportData, null, 2)], { 
+            type: 'application/json' 
+        });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `sources_config_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        showToast('Export completato!', 'success');
+        
+    } catch (error) {
+        showDetailedError(error, 'export configurazione');
+    }
+}
+
+// 9. AGGIUNTA: Funzione per importare configurazione sources
+function importSourcesConfig() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = async function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        try {
+            const text = await file.text();
+            const config = JSON.parse(text);
+            
+            if (!config.sources || !Array.isArray(config.sources)) {
+                showToast('File di configurazione non valido', 'error');
+                return;
+            }
+            
+            const confirmMsg = `Importare ${config.sources.length} sources?\n\nQuesto potrebbe sovrascrivere sources esistenti con lo stesso nome.`;
+            
+            if (confirm(confirmMsg)) {
+                await bulkImportSources(config.sources);
+            }
+            
+        } catch (error) {
+            showDetailedError(error, 'import configurazione');
+        }
+    };
+    
+    input.click();
+}
+
+async function bulkImportSources(sources) {
+    let imported = 0;
+    let errors = 0;
+    
+    showToast(`Importazione di ${sources.length} sources...`, 'info');
+    
+    for (const sourceConfig of sources) {
+        try {
+            const formData = new FormData();
+            formData.append('name', sourceConfig.name);
+            formData.append('base_url', sourceConfig.base_url);
+            if (sourceConfig.rss_url) formData.append('rss_url', sourceConfig.rss_url);
+            if (sourceConfig.description) formData.append('description', sourceConfig.description);
+            formData.append('is_active', sourceConfig.is_active || false);
+            formData.append('update_frequency', sourceConfig.update_frequency || 3600);
+            formData.append('rate_limit_delay', sourceConfig.rate_limit_delay || 2);
+            if (sourceConfig.scraping_config) {
+                formData.append('scraping_config', JSON.stringify(sourceConfig.scraping_config));
+            }
+            
+            const response = await fetch('/web/sources/add', {
+                method: 'POST',
+                body: formData
+            });
+            
+            if (response.ok) {
+                imported++;
+            } else {
+                errors++;
+                console.warn(`Failed to import source: ${sourceConfig.name}`);
+            }
+            
+        } catch (error) {
+            errors++;
+            console.error(`Error importing source ${sourceConfig.name}:`, error);
+        }
+        
+        // Piccola pausa per non sovraccaricare il server
+        await new Promise(resolve => setTimeout(resolve, 100));
+    }
+    
+    showToast(`Import completato: ${imported} sources importate, ${errors} errori`, 
+              errors > 0 ? 'warning' : 'success');
+    
+    if (imported > 0) {
+        setTimeout(() => location.reload(), 2000);
+    }
+}
+
+// 10. AGGIUNTA: Bottoni export/import nella pagina
+function addExportImportButtons() {
+    const headerActions = document.querySelector('.sources-header-actions');
+    if (headerActions) {
+        const exportBtn = document.createElement('button');
+        exportBtn.onclick = exportSourcesConfig;
+        exportBtn.className = 'bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm mr-2';
+        exportBtn.innerHTML = '<i class="fas fa-download mr-1"></i>Export';
+        
+        const importBtn = document.createElement('button');
+        importBtn.onclick = importSourcesConfig;
+        importBtn.className = 'bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm mr-2';
+        importBtn.innerHTML = '<i class="fas fa-upload mr-1"></i>Import';
+        
+        headerActions.insertBefore(exportBtn, headerActions.firstChild);
+        headerActions.insertBefore(importBtn, headerActions.firstChild);
+    }
 }
 
 // Add source form submission
@@ -974,6 +1208,47 @@ document.getElementById('addSourceForm').addEventListener('submit', async functi
     }
 });
 
+// Edit source form submission
+document.getElementById('editSourceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        id: parseInt(formData.get('source_id')),
+        name: formData.get('name'),
+        base_url: formData.get('base_url'),
+        rss_url: formData.get('rss_url') || null,
+        description: formData.get('description') || null,
+        is_active: formData.get('is_active') === 'on',
+        update_frequency: parseInt(formData.get('update_frequency')),
+        rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
+    };
+    
+    try {
+        showToast('Modifica source in corso...', 'info');
+        
+        const response = await fetch('/sources/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source "${data.name}" modificata con successo!`, 'success');
+            hideAddSourceModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
 // Close modal on escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -986,6 +1261,18 @@ document.getElementById('addSourceModal').addEventListener('click', function(e) 
     if (e.target === this) {
         hideAddSourceModal();
     }
+});
+
+// Chiama la funzione al caricamento della pagina
+document.addEventListener('DOMContentLoaded', setupCheckboxHandling);
+
+// Inizializzazione completa
+document.addEventListener('DOMContentLoaded', function() {
+    setupCheckboxHandling();
+    addExportImportButtons();
+    
+    // Auto-refresh stats ogni 2 minuti
+    setInterval(refreshSourceStats, 120000);
 });
 
 // Auto-refresh sources every 60 seconds
