@@ -1,469 +1,3 @@
-{% block extra_js %}
-<script>
-// Global variables
-let currentScrapingConfig = {};
-let currentEditingSourceId = null;
-
-// Toggle source status
-async function toggleSource(sourceId, checkbox) {
-    try {
-        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
-        } else {
-            // Revert checkbox state on error
-            checkbox.checked = !checkbox.checked;
-            showToast('Errore nel cambiare stato della source', 'error');
-        }
-    } catch (error) {
-        checkbox.checked = !checkbox.checked;
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Scrape single source
-async function scrapeSource(sourceId) {
-    try {
-        showToast('Avvio scraping...', 'info');
-        
-        const response = await fetch(`/sources/${sourceId}/scrape`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            const articlesCount = result.results[0]?.articles_scraped || 0;
-            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
-            
-            // Refresh page after delay
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Delete source
-async function deleteSource(sourceId, sourceName) {
-    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/sources/${sourceId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            showToast('Source eliminata con successo', 'success');
-            location.reload();
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Edit source
-async function editSource(sourceId) {
-    try {
-        currentEditingSourceId = sourceId;
-        
-        // Fetch source data
-        const response = await fetch(`/sources/${sourceId}`);
-        if (!response.ok) {
-            showToast('Errore nel caricare i dati della source', 'error');
-            return;
-        }
-        
-        const source = await response.json();
-        
-        // Populate form
-        document.getElementById('editSourceId').value = source.id;
-        document.getElementById('editSourceName').value = source.name;
-        document.getElementById('editSourceBaseUrl').value = source.base_url;
-        document.getElementById('editSourceRssUrl').value = source.rss_url || '';
-        document.getElementById('editSourceDescription').value = source.description || '';
-        document.getElementById('editSourceUpdateFreq').value = source.update_frequency;
-        document.getElementById('editSourceRateLimit').value = source.rate_limit_delay;
-        document.getElementById('editSourceActive').checked = source.is_active;
-        
-        // Handle scraping config
-        if (source.scraping_config) {
-            currentScrapingConfig = source.scraping_config;
-            updateScrapingConfigPreview('edit');
-        } else {
-            currentScrapingConfig = {};
-            document.getElementById('editScrapingConfigPreview').innerHTML = 
-                '<div class="text-gray-500">Nessuna configurazione</div>';
-        }
-        
-        showEditSourceModal();
-        
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Modal functions for Add Source
-function showAddSourceModal() {
-    document.getElementById('addSourceModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideAddSourceModal() {
-    document.getElementById('addSourceModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    document.getElementById('addSourceForm').reset();
-    currentScrapingConfig = {};
-    updateScrapingConfigPreview('add');
-}
-
-// Modal functions for Edit Source
-function showEditSourceModal() {
-    document.getElementById('editSourceModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideEditSourceModal() {
-    document.getElementById('editSourceModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    currentEditingSourceId = null;
-    currentScrapingConfig = {};
-}
-
-// Modal functions for Scraping Config
-function showScrapingConfigModal() {
-    document.getElementById('scrapingConfigModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-    
-    // Populate form with current config
-    populateScrapingConfigForm();
-}
-
-function hideScrapingConfigModal() {
-    document.getElementById('scrapingConfigModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-}
-
-function editScrapingConfig() {
-    showScrapingConfigModal();
-}
-
-// Populate scraping config form
-function populateScrapingConfigForm() {
-    const form = document.getElementById('scrapingConfigForm');
-    const config = currentScrapingConfig || {};
-    
-    // Base selectors
-    form.querySelector('[name="article_list_selector"]').value = config.article_list_selector || '';
-    form.querySelector('[name="title_selector"]').value = config.title_selector || '';
-    form.querySelector('[name="content_selector"]').value = config.content_selector || '';
-    form.querySelector('[name="url_selector"]').value = config.url_selector || '';
-    form.querySelector('[name="date_selector"]').value = config.date_selector || '';
-    form.querySelector('[name="author_selector"]').value = config.author_selector || '';
-    form.querySelector('[name="summary_selector"]').value = config.summary_selector || '';
-    form.querySelector('[name="max_articles"]').value = config.max_articles || 20;
-    
-    // Pagination
-    const followPagination = form.querySelector('[name="follow_pagination"]');
-    followPagination.checked = config.follow_pagination || false;
-    form.querySelector('[name="pagination_selector"]').value = config.pagination_selector || '';
-    form.querySelector('[name="max_pages"]').value = config.max_pages || 3;
-    
-    // Show/hide pagination config
-    togglePaginationConfig();
-}
-
-// Toggle pagination configuration
-function togglePaginationConfig() {
-    const checkbox = document.querySelector('#follow_pagination');
-    const config = document.querySelector('#paginationConfig');
-    
-    if (checkbox.checked) {
-        config.classList.remove('hidden');
-    } else {
-        config.classList.add('hidden');
-    }
-}
-
-// Save scraping configuration
-function saveScrapingConfig() {
-    const form = document.getElementById('scrapingConfigForm');
-    const formData = new FormData(form);
-    
-    const config = {};
-    
-    // Required field check
-    const articleListSelector = formData.get('article_list_selector');
-    if (!articleListSelector.trim()) {
-        showToast('Il selettore "Lista Articoli" è obbligatorio', 'error');
-        return;
-    }
-    
-    // Build config object
-    if (articleListSelector) config.article_list_selector = articleListSelector;
-    if (formData.get('title_selector')) config.title_selector = formData.get('title_selector');
-    if (formData.get('content_selector')) config.content_selector = formData.get('content_selector');
-    if (formData.get('url_selector')) config.url_selector = formData.get('url_selector');
-    if (formData.get('date_selector')) config.date_selector = formData.get('date_selector');
-    if (formData.get('author_selector')) config.author_selector = formData.get('author_selector');
-    if (formData.get('summary_selector')) config.summary_selector = formData.get('summary_selector');
-    
-    config.max_articles = parseInt(formData.get('max_articles')) || 20;
-    
-    // Pagination
-    if (formData.get('follow_pagination') === 'on') {
-        config.follow_pagination = true;
-        if (formData.get('pagination_selector')) {
-            config.pagination_selector = formData.get('pagination_selector');
-        }
-        config.max_pages = parseInt(formData.get('max_pages')) || 3;
-    }
-    
-    currentScrapingConfig = config;
-    updateScrapingConfigPreview();
-    hideScrapingConfigModal();
-    showToast('Configurazione scraping salvata', 'success');
-}
-
-// Update scraping config preview
-function updateScrapingConfigPreview(mode = 'add') {
-    const previewId = mode === 'edit' ? 'editScrapingConfigPreview' : 'scrapingConfigPreview';
-    const dataId = mode === 'edit' ? 'editScrapingConfigData' : 'scrapingConfigData';
-    const preview = document.getElementById(previewId);
-    const dataInput = document.getElementById(dataId);
-    
-    if (Object.keys(currentScrapingConfig).length === 0) {
-        preview.innerHTML = '<div class="text-gray-500 text-center">Nessuna configurazione di scraping</div>';
-        preview.className = "p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center text-gray-500 text-sm";
-        dataInput.value = '';
-        return;
-    }
-    
-    let html = '<div class="space-y-2">';
-    
-    if (currentScrapingConfig.article_list_selector) {
-        html += `<div class="flex justify-between">
-            <span class="font-medium">Lista:</span>
-            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.article_list_selector}</code>
-        </div>`;
-    }
-    
-    if (currentScrapingConfig.title_selector) {
-        html += `<div class="flex justify-between">
-            <span class="font-medium">Titolo:</span>
-            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.title_selector}</code>
-        </div>`;
-    }
-    
-    if (currentScrapingConfig.content_selector) {
-        html += `<div class="flex justify-between">
-            <span class="font-medium">Contenuto:</span>
-            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.content_selector}</code>
-        </div>`;
-    }
-    
-    html += `<div class="flex justify-between">
-        <span class="font-medium">Max Articoli:</span>
-        <span class="text-xs">${currentScrapingConfig.max_articles || 20}</span>
-    </div>`;
-    
-    if (currentScrapingConfig.follow_pagination) {
-        html += `<div class="text-xs text-blue-600 font-medium">
-            <i class="fas fa-list mr-1"></i>
-            Paginazione attiva (${currentScrapingConfig.max_pages || 3} pagine)
-        </div>`;
-    }
-    
-    html += '</div>';
-    
-    preview.innerHTML = html;
-    preview.className = "p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm";
-    dataInput.value = JSON.stringify(currentScrapingConfig);
-}
-
-// Test scraping configuration
-async function testScrapingConfig() {
-    const form = document.getElementById('scrapingConfigForm');
-    const formData = new FormData(form);
-    const baseUrl = document.querySelector('[name="base_url"]')?.value;
-    
-    if (!baseUrl) {
-        showToast('Inserisci prima l\'URL base della source', 'error');
-        return;
-    }
-}
-
-// Toggle source status
-async function toggleSource(sourceId, checkbox) {
-    try {
-        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
-        } else {
-            // Revert checkbox state on error
-            checkbox.checked = !checkbox.checked;
-            showToast('Errore nel cambiare stato della source', 'error');
-        }
-    } catch (error) {
-        checkbox.checked = !checkbox.checked;
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Scrape single source
-async function scrapeSource(sourceId) {
-    try {
-        showToast('Avvio scraping...', 'info');
-        
-        const response = await fetch(`/sources/${sourceId}/scrape`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            const articlesCount = result.results[0]?.articles_scraped || 0;
-            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
-            
-            // Refresh page after delay
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Delete source
-async function deleteSource(sourceId, sourceName) {
-    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/sources/${sourceId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            showToast('Source eliminata con successo', 'success');
-            location.reload();
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Edit source (placeholder)
-function editSource(sourceId) {
-    showToast('Funzionalità di modifica in sviluppo', 'info');
-}
-
-// Modal functions
-function showAddSourceModal() {
-    document.getElementById('addSourceModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideAddSourceModal() {
-    document.getElementById('addSourceModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    document.getElementById('addSourceForm').reset();
-}
-
-// Add source form submission
-document.getElementById('addSourceForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = {
-        name: formData.get('name'),
-        base_url: formData.get('base_url'),
-        rss_url: formData.get('rss_url') || null,
-        description: formData.get('description') || null,
-        is_active: formData.get('is_active') === 'on',
-        update_frequency: parseInt(formData.get('update_frequency')),
-        rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
-    };
-    
-    try {
-        showToast('Creazione source in corso...', 'info');
-        
-        const response = await fetch('/sources/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showToast(`Source "${data.name}" creata con successo!`, 'success');
-            hideAddSourceModal();
-            location.reload();
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-});
-
-// Close modal on escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        hideAddSourceModal();
-    }
-});
-
-// Close modal on backdrop click
-document.getElementById('addSourceModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        hideAddSourceModal();
-    }
-});
-
-// Auto-refresh sources every 60 seconds
-setInterval(() => {
-    // You could implement partial updates here
-    console.log('Auto-refresh would happen here');
-}, 60000);
-</script>        
-{% endblock %}
-
 {% extends "base.html" %}
 
 {% block page_subtitle %}
@@ -994,4 +528,470 @@ Gestisci le fonti RSS e web scraping
         </form>
     </div>
 </div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Global variables
+let currentScrapingConfig = {};
+let currentEditingSourceId = null;
+
+// Toggle source status
+async function toggleSource(sourceId, checkbox) {
+    try {
+        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
+        } else {
+            // Revert checkbox state on error
+            checkbox.checked = !checkbox.checked;
+            showToast('Errore nel cambiare stato della source', 'error');
+        }
+    } catch (error) {
+        checkbox.checked = !checkbox.checked;
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Scrape single source
+async function scrapeSource(sourceId) {
+    try {
+        showToast('Avvio scraping...', 'info');
+        
+        const response = await fetch(`/sources/${sourceId}/scrape`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const articlesCount = result.results[0]?.articles_scraped || 0;
+            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
+            
+            // Refresh page after delay
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Delete source
+async function deleteSource(sourceId, sourceName) {
+    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/sources/${sourceId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Source eliminata con successo', 'success');
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Edit source
+async function editSource(sourceId) {
+    try {
+        currentEditingSourceId = sourceId;
+        
+        // Fetch source data
+        const response = await fetch(`/sources/${sourceId}`);
+        if (!response.ok) {
+            showToast('Errore nel caricare i dati della source', 'error');
+            return;
+        }
+        
+        const source = await response.json();
+        
+        // Populate form
+        document.getElementById('editSourceId').value = source.id;
+        document.getElementById('editSourceName').value = source.name;
+        document.getElementById('editSourceBaseUrl').value = source.base_url;
+        document.getElementById('editSourceRssUrl').value = source.rss_url || '';
+        document.getElementById('editSourceDescription').value = source.description || '';
+        document.getElementById('editSourceUpdateFreq').value = source.update_frequency;
+        document.getElementById('editSourceRateLimit').value = source.rate_limit_delay;
+        document.getElementById('editSourceActive').checked = source.is_active;
+        
+        // Handle scraping config
+        if (source.scraping_config) {
+            currentScrapingConfig = source.scraping_config;
+            updateScrapingConfigPreview('edit');
+        } else {
+            currentScrapingConfig = {};
+            document.getElementById('editScrapingConfigPreview').innerHTML = 
+                '<div class="text-gray-500">Nessuna configurazione</div>';
+        }
+        
+        showEditSourceModal();
+        
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Modal functions for Add Source
+function showAddSourceModal() {
+    document.getElementById('addSourceModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideAddSourceModal() {
+    document.getElementById('addSourceModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('addSourceForm').reset();
+    currentScrapingConfig = {};
+    updateScrapingConfigPreview('add');
+}
+
+// Modal functions for Edit Source
+function showEditSourceModal() {
+    document.getElementById('editSourceModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEditSourceModal() {
+    document.getElementById('editSourceModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    currentEditingSourceId = null;
+    currentScrapingConfig = {};
+}
+
+// Modal functions for Scraping Config
+function showScrapingConfigModal() {
+    document.getElementById('scrapingConfigModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+    
+    // Populate form with current config
+    populateScrapingConfigForm();
+}
+
+function hideScrapingConfigModal() {
+    document.getElementById('scrapingConfigModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+function editScrapingConfig() {
+    showScrapingConfigModal();
+}
+
+// Populate scraping config form
+function populateScrapingConfigForm() {
+    const form = document.getElementById('scrapingConfigForm');
+    const config = currentScrapingConfig || {};
+    
+    // Base selectors
+    form.querySelector('[name="article_list_selector"]').value = config.article_list_selector || '';
+    form.querySelector('[name="title_selector"]').value = config.title_selector || '';
+    form.querySelector('[name="content_selector"]').value = config.content_selector || '';
+    form.querySelector('[name="url_selector"]').value = config.url_selector || '';
+    form.querySelector('[name="date_selector"]').value = config.date_selector || '';
+    form.querySelector('[name="author_selector"]').value = config.author_selector || '';
+    form.querySelector('[name="summary_selector"]').value = config.summary_selector || '';
+    form.querySelector('[name="max_articles"]').value = config.max_articles || 20;
+    
+    // Pagination
+    const followPagination = form.querySelector('[name="follow_pagination"]');
+    followPagination.checked = config.follow_pagination || false;
+    form.querySelector('[name="pagination_selector"]').value = config.pagination_selector || '';
+    form.querySelector('[name="max_pages"]').value = config.max_pages || 3;
+    
+    // Show/hide pagination config
+    togglePaginationConfig();
+}
+
+// Toggle pagination configuration
+function togglePaginationConfig() {
+    const checkbox = document.querySelector('#follow_pagination');
+    const config = document.querySelector('#paginationConfig');
+    
+    if (checkbox.checked) {
+        config.classList.remove('hidden');
+    } else {
+        config.classList.add('hidden');
+    }
+}
+
+// Save scraping configuration
+function saveScrapingConfig() {
+    const form = document.getElementById('scrapingConfigForm');
+    const formData = new FormData(form);
+    
+    const config = {};
+    
+    // Required field check
+    const articleListSelector = formData.get('article_list_selector');
+    if (!articleListSelector.trim()) {
+        showToast('Il selettore "Lista Articoli" è obbligatorio', 'error');
+        return;
+    }
+    
+    // Build config object
+    if (articleListSelector) config.article_list_selector = articleListSelector;
+    if (formData.get('title_selector')) config.title_selector = formData.get('title_selector');
+    if (formData.get('content_selector')) config.content_selector = formData.get('content_selector');
+    if (formData.get('url_selector')) config.url_selector = formData.get('url_selector');
+    if (formData.get('date_selector')) config.date_selector = formData.get('date_selector');
+    if (formData.get('author_selector')) config.author_selector = formData.get('author_selector');
+    if (formData.get('summary_selector')) config.summary_selector = formData.get('summary_selector');
+    
+    config.max_articles = parseInt(formData.get('max_articles')) || 20;
+    
+    // Pagination
+    if (formData.get('follow_pagination') === 'on') {
+        config.follow_pagination = true;
+        if (formData.get('pagination_selector')) {
+            config.pagination_selector = formData.get('pagination_selector');
+        }
+        config.max_pages = parseInt(formData.get('max_pages')) || 3;
+    }
+    
+    currentScrapingConfig = config;
+    updateScrapingConfigPreview();
+    hideScrapingConfigModal();
+    showToast('Configurazione scraping salvata', 'success');
+}
+
+// Update scraping config preview
+function updateScrapingConfigPreview(mode = 'add') {
+    const previewId = mode === 'edit' ? 'editScrapingConfigPreview' : 'scrapingConfigPreview';
+    const dataId = mode === 'edit' ? 'editScrapingConfigData' : 'scrapingConfigData';
+    const preview = document.getElementById(previewId);
+    const dataInput = document.getElementById(dataId);
+    
+    if (Object.keys(currentScrapingConfig).length === 0) {
+        preview.innerHTML = '<div class="text-gray-500 text-center">Nessuna configurazione di scraping</div>';
+        preview.className = "p-3 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 text-center text-gray-500 text-sm";
+        dataInput.value = '';
+        return;
+    }
+    
+    let html = '<div class="space-y-2">';
+    
+    if (currentScrapingConfig.article_list_selector) {
+        html += `<div class="flex justify-between">
+            <span class="font-medium">Lista:</span>
+            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.article_list_selector}</code>
+        </div>`;
+    }
+    
+    if (currentScrapingConfig.title_selector) {
+        html += `<div class="flex justify-between">
+            <span class="font-medium">Titolo:</span>
+            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.title_selector}</code>
+        </div>`;
+    }
+    
+    if (currentScrapingConfig.content_selector) {
+        html += `<div class="flex justify-between">
+            <span class="font-medium">Contenuto:</span>
+            <code class="text-xs bg-gray-200 px-1 rounded">${currentScrapingConfig.content_selector}</code>
+        </div>`;
+    }
+    
+    html += `<div class="flex justify-between">
+        <span class="font-medium">Max Articoli:</span>
+        <span class="text-xs">${currentScrapingConfig.max_articles || 20}</span>
+    </div>`;
+    
+    if (currentScrapingConfig.follow_pagination) {
+        html += `<div class="text-xs text-blue-600 font-medium">
+            <i class="fas fa-list mr-1"></i>
+            Paginazione attiva (${currentScrapingConfig.max_pages || 3} pagine)
+        </div>`;
+    }
+    
+    html += '</div>';
+    
+    preview.innerHTML = html;
+    preview.className = "p-3 bg-blue-50 rounded-lg border border-blue-200 text-sm";
+    dataInput.value = JSON.stringify(currentScrapingConfig);
+}
+
+// Test scraping configuration
+async function testScrapingConfig() {
+    const form = document.getElementById('scrapingConfigForm');
+    const formData = new FormData(form);
+    const baseUrl = document.querySelector('[name="base_url"]')?.value;
+    
+    if (!baseUrl) {
+        showToast('Inserisci prima l\'URL base della source', 'error');
+        return;
+    }
+}
+
+// Toggle source status
+async function toggleSource(sourceId, checkbox) {
+    try {
+        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
+        } else {
+            // Revert checkbox state on error
+            checkbox.checked = !checkbox.checked;
+            showToast('Errore nel cambiare stato della source', 'error');
+        }
+    } catch (error) {
+        checkbox.checked = !checkbox.checked;
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Scrape single source
+async function scrapeSource(sourceId) {
+    try {
+        showToast('Avvio scraping...', 'info');
+        
+        const response = await fetch(`/sources/${sourceId}/scrape`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const articlesCount = result.results[0]?.articles_scraped || 0;
+            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
+            
+            // Refresh page after delay
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Delete source
+async function deleteSource(sourceId, sourceName) {
+    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/sources/${sourceId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Source eliminata con successo', 'success');
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Edit source (placeholder)
+function editSource(sourceId) {
+    showToast('Funzionalità di modifica in sviluppo', 'info');
+}
+
+// Modal functions
+function showAddSourceModal() {
+    document.getElementById('addSourceModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideAddSourceModal() {
+    document.getElementById('addSourceModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('addSourceForm').reset();
+}
+
+// Add source form submission
+document.getElementById('addSourceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        base_url: formData.get('base_url'),
+        rss_url: formData.get('rss_url') || null,
+        description: formData.get('description') || null,
+        is_active: formData.get('is_active') === 'on',
+        update_frequency: parseInt(formData.get('update_frequency')),
+        rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
+    };
+    
+    try {
+        showToast('Creazione source in corso...', 'info');
+        
+        const response = await fetch('/sources/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source "${data.name}" creata con successo!`, 'success');
+            hideAddSourceModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideAddSourceModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('addSourceModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddSourceModal();
+    }
+});
+
+// Auto-refresh sources every 60 seconds
+setInterval(() => {
+    // You could implement partial updates here
+    console.log('Auto-refresh would happen here');
+}, 60000);
+</script>        
 {% endblock %}
