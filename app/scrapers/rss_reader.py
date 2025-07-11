@@ -1,5 +1,5 @@
 import feedparser
-from datetime import datetime
+import datetime as dt
 from typing import List, Dict, Any, Optional
 from urllib.parse import urljoin, urlparse
 import asyncio
@@ -160,7 +160,7 @@ class RSSReader(BaseReader):
         
         return None
     
-    def _extract_date_from_entry(self, entry) -> Optional[datetime]:
+    def _extract_date_from_entry(self, entry) -> Optional[dt.datetime]:
         """Extract published date from RSS entry"""
         date_fields = ['published', 'updated', 'created']
         
@@ -174,7 +174,7 @@ class RSSReader(BaseReader):
                         if hasattr(entry, parsed_field):
                             parsed_date = getattr(entry, parsed_field)
                             if parsed_date:
-                                return datetime(*parsed_date[:6])
+                                return dt.datetime(*parsed_date[:6])
                         
                         # Fallback to dateutil parser
                         return date_parser.parse(date_str)

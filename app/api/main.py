@@ -5,8 +5,10 @@ from fastapi.staticfiles import StaticFiles
 from fastapi.openapi.docs import get_swagger_ui_html
 from fastapi.openapi.utils import get_openapi
 import logging
-import time
-from datetime import datetime
+import time as tm
+import datetime as dt
+
+
 
 from .routes import articles, sources, tags, statistics
 from .models import ErrorResponse
@@ -41,7 +43,7 @@ app.add_middleware(
 # Middleware per logging delle richieste
 @app.middleware("http")
 async def log_requests(request: Request, call_next):
-    start_time = time.time()
+    start_time = tm.time()
     
     # Log richiesta
     logger.info(f"Request: {request.method} {request.url}")
@@ -49,7 +51,7 @@ async def log_requests(request: Request, call_next):
     response = await call_next(request)
     
     # Log risposta
-    process_time = time.time() - start_time
+    process_time = tm.time() - start_time
     logger.info(f"Response: {response.status_code} - {process_time:.3f}s")
     
     # Aggiungi header con tempo di processo
@@ -60,25 +62,30 @@ async def log_requests(request: Request, call_next):
 # Exception handlers
 @app.exception_handler(HTTPException)
 async def http_exception_handler(request: Request, exc: HTTPException):
+    logger.error(f"HTTP exception: {str(exc)}", exc_info=True)
+    content = ErrorResponse(
+        detail=exc.detail,
+        error_code=f"HTTP_{exc.status_code}",
+        timestamp=dt.datetime.utcnow().isoformat()
+    ).dict()
+
     return JSONResponse(
         status_code=exc.status_code,
-        content=ErrorResponse(
-            detail=exc.detail,
-            error_code=f"HTTP_{exc.status_code}",
-            timestamp=datetime.now(datetime.timezone.utc).isoformat()
-        )
+        content=content
     )
 
 @app.exception_handler(Exception)
 async def general_exception_handler(request: Request, exc: Exception):
     logger.error(f"Unhandled exception: {str(exc)}", exc_info=True)
+    content = ErrorResponse(
+        detail="Internal server error",
+        error_code="INTERNAL_ERROR",
+        timestamp=dt.datetime.utcnow().isoformat()
+    ).dict()
+
     return JSONResponse(
         status_code=500,
-        content=ErrorResponse(
-            detail="Internal server error",
-            error_code="INTERNAL_ERROR",
-            timestamp=datetime.now(datetime.timezone.utc).isoformat()
-        )
+        content=content
     )
 
 # Startup event
@@ -117,7 +124,7 @@ async def root():
             "tags": "/tags",
             "statistics": "/statistics"
         },
-        "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+        "timestamp": dt.datetime.utcnow().isoformat(),
         "status": "running"
     }
 
@@ -143,7 +150,7 @@ async def health_check():
         
         return {
             "status": "healthy" if db_status == "healthy" else "degraded",
-            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+            "timestamp": dt.datetime.utcnow().isoformat(),
             "database": db_status,
             "article_count": article_count,
             "version": "1.0.0"
@@ -154,7 +161,7 @@ async def health_check():
             status_code=503,
             content={
                 "status": "unhealthy",
-                "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
+                "timestamp": dt.datetime.utcnow().isoformat(),
                 "error": str(e)
             }
         )

@@ -6,7 +6,7 @@ Test script per verificare i scrapers
 import sys
 import os
 import asyncio
-from datetime import datetime
+import datetime as dt
 
 # Aggiungi il percorso root del progetto al PYTHONPATH
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -215,11 +215,11 @@ async def test_concurrent_scraping():
             manager = ScraperManager(db)
             
             print("   Starting concurrent scraping...")
-            start_time = datetime.now(datetime.timezone.utc)
+            start_time = dt.datetime.utcnow()
             
             results = await manager.scrape_all_active_sources()
             
-            end_time = datetime.now(datetime.timezone.utc)
+            end_time = dt.datetime.utcnow()
             duration = (end_time - start_time).total_seconds()
             
             total_articles = sum(len(articles) for articles in results.values())

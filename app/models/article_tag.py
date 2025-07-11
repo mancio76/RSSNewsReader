@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, ForeignKey, Float, String, DateTime, Table
 from sqlalchemy.orm import relationship
 from .base import Base
-import datetime
+import datetime as dt
 
 # Tabella di associazione molti-a-molti con metadati aggiuntivi
 class ArticleTag(Base):
@@ -13,7 +13,7 @@ class ArticleTag(Base):
     # Metadati associazione
     confidence = Column(Float, default=1.0)  # confidenza se estratto automaticamente
     source = Column(String(20), default='manual')  # manual, nlp, auto
-    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc))
     
     # Relazioni
     article = relationship("Article")

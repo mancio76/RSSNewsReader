@@ -4,7 +4,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, func, and_
 from typing import Optional
-from datetime import datetime, timedelta
+import datetime as dt
 import json
 
 from ..api.dependencies import get_db
@@ -16,7 +16,7 @@ templates = Jinja2Templates(directory="app/frontend/templates")
 # Aggiungi filtro JSON per Jinja2 con gestione datetime
 def to_json(value):
     def json_serializer(obj):
-        if isinstance(obj, datetime):
+        if isinstance(obj, dt.datetime):
             return obj.isoformat()
         raise TypeError(f"Object of type {type(obj)} is not JSON serializable")
     
@@ -34,7 +34,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     active_sources = db.query(Source).filter(Source.is_active == True).count()
     
     # Articoli recenti (ultimi 7 giorni)
-    week_ago = datetime.now(datetime.timezone.utc) - timedelta(days=7)
+    week_ago = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
     recent_articles = db.query(Article).filter(Article.scraped_date >= week_ago).count()
     
     # Top sources per numero articoli
@@ -193,7 +193,7 @@ async def sources_list(request: Request, db: Session = Depends(get_db)):
         article_count = db.query(Article).filter(Article.source_id == source.id).count()
         recent_articles = db.query(Article).filter(
             Article.source_id == source.id,
-            Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
+            Article.scraped_date >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
         ).count()
         
         # Crea un dict completamente serializzabile (NO oggetti datetime)
@@ -231,8 +231,8 @@ async def analytics(request: Request, db: Session = Depends(get_db)):
     """Pagina analytics"""
     
     # Timeline ultimi 30 giorni
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=30)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=30)
     
     timeline_data = db.query(
         func.date(Article.scraped_date).label('date'),
@@ -251,7 +251,7 @@ async def analytics(request: Request, db: Session = Depends(get_db)):
             'date': current_date.isoformat(),
             'articles': timeline_dict.get(current_date, 0)
         })
-        current_date += timedelta(days=1)
+        current_date += dt.timedelta(days=1)
     
     # Sources performance
     sources_performance = db.query(
@@ -316,7 +316,7 @@ async def toggle_source(source_id: int, db: Session = Depends(get_db)):
     source = db.query(Source).filter(Source.id == source_id).first()
     if source:
         source.is_active = not source.is_active
-        source.updated_date = datetime.now(datetime.timezone.utc)
+        source.updated_date = dt.datetime.now(dt.timezone.utc)
         db.commit()
     
     return {"success": True, "is_active": source.is_active if source else False}

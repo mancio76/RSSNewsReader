@@ -1,6 +1,6 @@
 from pydantic import BaseModel, HttpUrl, validator
 from typing import Optional, List, Dict, Any
-from datetime import datetime
+import datetime as dt
 from enum import Enum
 
 # Response Models
@@ -13,8 +13,8 @@ class ArticleResponse(BaseModel):
     author: Optional[str] = None
     source_id: int
     source_name: Optional[str] = None
-    published_date: Optional[datetime] = None
-    scraped_date: datetime
+    published_date: Optional[dt.datetime] = None
+    scraped_date: dt.datetime
     word_count: Optional[int] = None
     language: Optional[str] = None
     sentiment_score: Optional[float] = None
@@ -41,12 +41,12 @@ class SourceResponse(BaseModel):
     is_active: bool
     error_count: int
     last_error: Optional[str] = None
-    last_scraped: Optional[datetime] = None
-    next_scrape: Optional[datetime] = None
+    last_scraped: Optional[dt.datetime] = None
+    next_scrape: Optional[dt.datetime] = None
     rate_limit_delay: int
     update_frequency: int
-    created_date: datetime
-    updated_date: datetime
+    created_date: dt.datetime
+    updated_date: dt.datetime
     article_count: Optional[int] = None
     
     class Config:
@@ -131,7 +131,7 @@ class ArticleUpdate(BaseModel):
     content: Optional[str] = None
     summary: Optional[str] = None
     author: Optional[str] = None
-    published_date: Optional[datetime] = None
+    published_date: Optional[dt.datetime] = None
     language: Optional[str] = None
     
     @validator('title')
@@ -184,7 +184,7 @@ class SystemStats(BaseModel):
     article_stats: ArticleStats
     top_tags: List[TagResponse]
     recent_errors: List[str]
-    last_scrape: Optional[datetime] = None
+    last_scrape: Optional[dt.datetime] = None
 
 # Search Models
 class SearchFilter(BaseModel):
@@ -192,8 +192,8 @@ class SearchFilter(BaseModel):
     source_ids: Optional[List[int]] = None
     tags: Optional[List[str]] = None
     author: Optional[str] = None
-    date_from: Optional[datetime] = None
-    date_to: Optional[datetime] = None
+    date_from: Optional[dt.datetime] = None
+    date_to: Optional[dt.datetime] = None
     language: Optional[str] = None
     min_word_count: Optional[int] = None
     max_word_count: Optional[int] = None
@@ -225,7 +225,7 @@ class ScrapeResponse(BaseModel):
 class ErrorResponse(BaseModel):
     detail: str
     error_code: Optional[str] = None
-    timestamp: datetime = datetime.now(datetime.timezone.utc).isoformat()
+    timestamp: str = dt.datetime.now(dt.timezone.utc).isoformat()
 
 # Allow forward references
 CategoryResponse.model_rebuild()

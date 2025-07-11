@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from abc import ABC, abstractmethod
-from datetime import datetime
+import datetime as dt
 from typing import List, Dict, Optional, Any
 import aiohttp
 from dataclasses import dataclass
@@ -19,7 +19,7 @@ class ScrapedArticle:
     content: str
     url: str
     author: Optional[str] = None
-    published_date: Optional[datetime] = None
+    published_date: Optional[dt.datetime] = None
     summary: Optional[str] = None
     tags: List[str] = None
     metadata: Dict[str, Any] = None
@@ -113,21 +113,21 @@ class BaseReader(ABC):
         """Get source information"""
         pass
     
-    def UTCNOW(self) -> datetime:
+    def UTCNOW(self) -> dt.datetime:
         """Get current UTC time"""
-        return datetime.now(datetime.timezone.utc)
+        return dt.datetime.now(dt.timezone.utc().utc)
 
-    def LocalTimeZone(self) -> datetime.tzinfo:
+    def LocalTimeZone(self) -> dt.datetime.tzinfo:
         """Get local timezone info"""
-        return datetime.now().astimezone().tzinfo
+        return dt.datetime.now().astimezone().tzinfo
 
-    def LOCALNOW(self) -> datetime:
+    def LOCALNOW(self) -> dt.datetime:
         """Get current UTC time"""
-        return datetime.now(self.LocalTimeZone())
+        return dt.datetime.now(self.LocalTimeZone())
 
-    def get_last_update(self) -> datetime:
+    def get_last_update(self) -> dt.datetime:
         """Get last update timestamp"""
-        return datetime.now(datetime.timezone.utc)
+        return dt.datetime.now(dt.timezone.utc().utc)
     
     def clean_text(self, text: str) -> str:
         """Clean and normalize text"""

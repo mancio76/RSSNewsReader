@@ -12,7 +12,7 @@ sys.path.insert(0, project_root)
 
 from app.models import Base, Source, Article, Category, Tag, ArticleTag, ArticleMetadata, ArticleVersion
 from app.models.base import create_db_engine, SessionLocal, create_tables
-from datetime import datetime
+import datetime as dt
 
 def test_models():
     """Test base dei modelli"""
@@ -73,7 +73,7 @@ def test_models():
             url="https://example.com/article-1",
             author="Test Author",
             source_id=source.id,
-            published_date=datetime.now(datetime.timezone.utc),
+            published_date=dt.datetime.utcnow(),
             word_count=10,
             language="it"
         )

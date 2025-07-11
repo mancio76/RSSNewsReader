@@ -1,6 +1,6 @@
 import asyncio
 import logging
-from datetime import datetime, timedelta
+import datetime as dt
 from typing import List, Dict, Any, Optional
 from sqlalchemy.orm import Session
 
@@ -80,8 +80,8 @@ class ScraperManager:
                         articles.append(article)
                 
                 # Aggiorna source metadata
-                source.last_scraped = datetime.now(datetime.timezone.utc)
-                source.next_scrape = datetime.now(datetime.timezone.utc) + timedelta(seconds=source.update_frequency)
+                source.last_scraped = dt.datetime.now(dt.timezone.utc)
+                source.next_scrape = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=source.update_frequency)
                 source.error_count = 0
                 source.last_error = None
                 self.db.commit()
@@ -114,7 +114,7 @@ class ScraperManager:
                 author=scraped_article.author,
                 source_id=source.id,
                 published_date=scraped_article.published_date,
-                scraped_date=datetime.now(datetime.timezone.utc),
+                scraped_date=dt.datetime.now(dt.timezone.utc),
                 word_count=len(scraped_article.content.split()) if scraped_article.content else 0,
                 language='it'  # Default, potrebbe essere rilevato automaticamente
             )
@@ -244,7 +244,7 @@ class ScraperManager:
     async def scrape_sources_by_schedule(self) -> Dict[str, List[Article]]:
         """Scrape solo le sources che necessitano aggiornamento secondo schedule"""
         try:
-            now = datetime.now(datetime.timezone.utc)
+            now = dt.datetime.now(dt.timezone.utc)
             
             # Sources che devono essere aggiornate
             sources_to_update = self.db.query(Source).filter(
@@ -311,7 +311,7 @@ class ScraperManager:
             error_sources = self.db.query(Source).filter(Source.error_count > 0).count()
             
             recent_articles = self.db.query(Article).filter(
-                Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=1)
+                Article.scraped_date >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=1)
             ).count()
             
             return {
@@ -319,7 +319,7 @@ class ScraperManager:
                 'active_sources': active_sources,
                 'error_sources': error_sources,
                 'recent_articles_24h': recent_articles,
-                'last_update': datetime.now(datetime.timezone.utc).isoformat()
+                'last_update': dt.datetime.now(dt.timezone.utc).isoformat()
             }
             
         except Exception as e:

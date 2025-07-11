@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, Query
 from sqlalchemy.orm import Session
 from sqlalchemy import desc, func, and_
 from typing import Optional, List, Dict
-from datetime import datetime, timedelta
+import datetime as dt
 from collections import Counter
 
 from ..dependencies import get_db
@@ -31,10 +31,10 @@ async def get_dashboard_stats(db: Session = Depends(get_db)):
     )
     
     # Article statistics
-    now = datetime.now(datetime.timezone.utc)
+    now = dt.datetime.now(dt.timezone.utc)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_ago = today - timedelta(days=7)
-    month_ago = today - timedelta(days=30)
+    week_ago = today - dt.timedelta(days=7)
+    month_ago = today - dt.timedelta(days=30)
     
     total_articles = db.query(Article).count()
     articles_today = db.query(Article).filter(Article.scraped_date >= today).count()
@@ -103,8 +103,8 @@ async def get_articles_timeline(
 ):
     """Get articles timeline for the last N days"""
     
-    end_date = datetime.now(datetime.timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc).replace(hour=23, minute=59, second=59, microsecond=999999)
+    start_date = end_date - dt.timedelta(days=days)
     
     query = db.query(
         func.date(Article.scraped_date).label('date'),
@@ -127,7 +127,7 @@ async def get_articles_timeline(
     
     while current_date <= end_date.date():
         timeline[current_date.isoformat()] = 0
-        current_date += timedelta(days=1)
+        current_date += dt.timedelta(days=1)
     
     # Fill actual data
     for date, count in results:
@@ -149,8 +149,8 @@ async def get_sources_performance(
 ):
     """Get sources performance metrics"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     # Articles per source in period
     articles_per_source = db.query(
@@ -199,8 +199,8 @@ async def get_tag_trends(
 ):
     """Get trending tags over time"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     # Get tag usage in the period
     tag_usage = db.query(
@@ -242,8 +242,8 @@ async def get_content_analysis(
 ):
     """Get content analysis statistics"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     # Articles in period
     articles = db.query(Article).filter(
@@ -322,8 +322,8 @@ async def get_top_authors(
 ):
     """Get top authors by article count"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     authors = db.query(
         Article.author,
@@ -359,8 +359,8 @@ async def export_statistics_csv(
 ):
     """Export statistics as CSV data"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     # Get articles with related data
     articles = db.query(Article).join(Source).filter(
@@ -392,7 +392,7 @@ async def export_statistics_csv(
         "data": csv_data,
         "total_records": len(csv_data),
         "period": f"{start_date.date()} to {end_date.date()}",
-        "export_date": datetime.now(datetime.timezone.utc).isoformat()
+        "export_date": dt.datetime.now(dt.timezone.utc).isoformat()
     }
 
 @router.get("/health")
@@ -410,9 +410,9 @@ async def get_system_health(db: Session = Depends(get_db)):
         db_healthy = False
     
     # Recent activity
-    now = datetime.now(datetime.timezone.utc)
-    last_hour = now - timedelta(hours=1)
-    last_24h = now - timedelta(hours=24)
+    now = dt.datetime.now(dt.timezone.utc)
+    last_hour = now - dt.timedelta(hours=1)
+    last_24h = now - dt.timedelta(hours=24)
     
     recent_articles = db.query(Article).filter(Article.scraped_date >= last_hour).count()
     articles_24h = db.query(Article).filter(Article.scraped_date >= last_24h).count()
@@ -455,8 +455,8 @@ async def get_wordcloud_data(
 ):
     """Get wordcloud data based on recent tag usage"""
     
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=days)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=days)
     
     # Get tags used in the period
     tag_data = db.query(
@@ -509,5 +509,5 @@ async def get_source_errors(
     return {
         "error_sources": errors_data,
         "total_error_sources": len(errors_data),
-        "check_date": datetime.now(datetime.timezone.utc).isoformat()
+        "check_date": dt.datetime.now(dt.timezone.utc).isoformat()
     }

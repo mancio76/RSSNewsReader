@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, DateTime, Boolean, JSON, Text
 from sqlalchemy.orm import relationship
 from .base import Base
-import datetime
+import datetime as dt
 
 class Source(Base):
     __tablename__ = 'sources'
@@ -29,8 +29,8 @@ class Source(Base):
     last_error = Column(Text)
     
     # Timestamp
-    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc)) ## datetime.datetime.utcnow
-    updated_date = Column(DateTime, default=datetime.now(datetime.timezone.utc), onupdate=datetime.now(datetime.timezone.utc))
+    created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc)) ## datetime.datetime.utcnow
+    updated_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc), onupdate=dt.datetime.now(dt.timezone.utc))
     
     # Relazioni
     articles = relationship("Article", back_populates="source", cascade="all, delete-orphan")

@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, Query
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, asc, and_, or_, func
 from typing import Optional, List
-from datetime import datetime, timedelta
+import datetime as dt
 
 from ..dependencies import get_db, validate_pagination
 from ..models import ArticleResponse, ArticleListResponse, ArticleUpdate, SearchFilter
@@ -17,8 +17,8 @@ async def get_articles(
     source_id: Optional[int] = Query(None),
     author: Optional[str] = Query(None),
     language: Optional[str] = Query(None),
-    date_from: Optional[datetime] = Query(None),
-    date_to: Optional[datetime] = Query(None),
+    date_from: Optional[dt.datetime] = Query(None),
+    date_to: Optional[dt.datetime] = Query(None),
     exclude_duplicates: bool = Query(True),
     search: Optional[str] = Query(None),
     sort_by: str = Query("scraped_date", regex="^(scraped_date|published_date|title|word_count)$"),
@@ -166,7 +166,7 @@ async def update_article(
         article.generate_content_hash()
         article.word_count = len(article.content.split()) if article.content else 0
     
-    article.updated_date = datetime.now(datetime.timezone.utc)
+    article.updated_date = dt.datetime.now(dt.timezone.utc)
     
     try:
         db.commit()
@@ -319,10 +319,10 @@ async def search_articles(
 async def get_article_stats(db: Session = Depends(get_db)):
     """Get article statistics"""
     
-    now = datetime.now(datetime.timezone.utc)
+    now = dt.datetime.now(dt.timezone.utc)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
-    week_ago = today - timedelta(days=7)
-    month_ago = today - timedelta(days=30)
+    week_ago = today - dt.timedelta(days=7)
+    month_ago = today - dt.timedelta(days=30)
     
     total_articles = db.query(Article).count()
     articles_today = db.query(Article).filter(Article.scraped_date >= today).count()

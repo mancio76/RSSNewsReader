@@ -1,4 +1,4 @@
-from datetime import datetime
+import datetime as dt
 from typing import List, Dict, Any, Optional
 from urllib.parse import urljoin, urlparse
 import asyncio
@@ -189,7 +189,7 @@ class WebReader(BaseReader):
             self.logger.debug(f"Error extracting URL with selector {selector}: {str(e)}")
             return None
     
-    def _extract_date_by_selector(self, element, selector: str) -> Optional[datetime]:
+    def _extract_date_by_selector(self, element, selector: str) -> Optional[dt.datetime]:
         """Extract date using CSS selector"""
         try:
             found_element = element.select_one(selector)

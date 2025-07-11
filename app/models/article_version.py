@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
-import datetime
+import datetime as dt
 
 class ArticleVersion(Base):
     __tablename__ = 'article_versions'
@@ -20,7 +20,7 @@ class ArticleVersion(Base):
     change_description = Column(Text)
     
     # Timestamp
-    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc))
+    created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc))
     
     # Relazioni
     article = relationship("Article", back_populates="versions")

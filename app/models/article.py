@@ -1,7 +1,7 @@
 from sqlalchemy import Column, Integer, String, Text, DateTime, Boolean, Float, ForeignKey, Index
 from sqlalchemy.orm import relationship
 from .base import Base
-import datetime
+import datetime as dt
 import hashlib
 
 class Article(Base):
@@ -19,8 +19,8 @@ class Article(Base):
     
     # Date
     published_date = Column(DateTime)
-    scraped_date = Column(DateTime, default=datetime.now(datetime.timezone.utc)) ## datetime.datetime.utcnow
-    updated_date = Column(DateTime, default=datetime.now(datetime.timezone.utc), onupdate=datetime.now(datetime.timezone.utc))
+    scraped_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc)) ## datetime.datetime.utcnow
+    updated_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc), onupdate=dt.datetime.now(dt.timezone.utc))
     
     # Hashing per deduplicazione
     content_hash = Column(String(64), index=True)

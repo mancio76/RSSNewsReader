@@ -6,7 +6,7 @@ Gestione dati attraverso interfaccia a riga di comando
 
 import sys
 import os
-from datetime import datetime
+import datetime as dt
 from typing import Optional, List
 
 # Aggiungi il percorso root del progetto al PYTHONPATH
@@ -60,7 +60,7 @@ class CLIManager:
         except EOFError:
             return "0"
     
-    def format_datetime(self, dt: Optional[datetime]) -> str:
+    def format_datetime(self, dt: Optional[dt.datetime]) -> str:
         """Formatta datetime per visualizzazione"""
         if dt:
             return dt.strftime("%Y-%m-%d %H:%M:%S")
@@ -402,7 +402,7 @@ class CLIManager:
             confirm = input(f"\nConfermi le modifiche? (y/N): ").strip().lower()
             
             if confirm in ['y', 'yes', 'si', 's']:
-                source.updated_date = datetime.now(datetime.timezone.utc)
+                source.updated_date = dt.datetime.utcnow()
                 self.db.commit()
                 print(f"✅ Source {source_id} modificata con successo.")
             else:
@@ -517,8 +517,8 @@ class CLIManager:
                 rate_limit_delay=rate_limit_delay,
                 update_frequency=update_frequency,
                 scraping_config=scraping_config,
-                created_date=datetime.now(datetime.timezone.utc),
-                updated_date=datetime.now(datetime.timezone.utc)
+                created_date=dt.datetime.utcnow(),
+                updated_date=dt.datetime.utcnow()
             )
             
             # Mostra riepilogo

@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import desc, func, and_
 from typing import Optional, List
-from datetime import datetime, timedelta
+import datetime as dt
 import os
 
 from ..models import Source, Article, Tag, ArticleTag, Category
@@ -44,7 +44,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         .limit(10).all()
     
     # Articoli ultimi 7 giorni
-    week_ago = datetime.now(datetime.timezone.utc) - timedelta(days=7)
+    week_ago = dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
     recent_count = db.query(Article).filter(Article.scraped_date >= week_ago).count()
     
     return templates.TemplateResponse("dashboard.html", {
@@ -155,7 +155,7 @@ async def sources_page(request: Request, db: Session = Depends(get_db)):
         article_count = db.query(Article).filter(Article.source_id == source.id).count()
         recent_count = db.query(Article).filter(
             Article.source_id == source.id,
-            Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
+            Article.scraped_date >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
         ).count()
         
         source_stats.append({
@@ -193,7 +193,7 @@ async def source_detail(request: Request, source_id: int, db: Session = Depends(
     total_articles = db.query(Article).filter(Article.source_id == source_id).count()
     recent_articles = db.query(Article).filter(
         Article.source_id == source_id,
-        Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
+        Article.scraped_date >= dt.datetime.now(dt.timezone.utc) - dt.timedelta(days=7)
     ).count()
     
     return templates.TemplateResponse("source_detail.html", {
@@ -232,8 +232,8 @@ async def analytics_page(request: Request, db: Session = Depends(get_db)):
     
     # Dati per grafici
     # Articoli per giorno (ultimi 30 giorni)
-    end_date = datetime.now(datetime.timezone.utc)
-    start_date = end_date - timedelta(days=30)
+    end_date = dt.datetime.now(dt.timezone.utc)
+    start_date = end_date - dt.timedelta(days=30)
     
     daily_stats = db.query(
         func.date(Article.scraped_date).label('date'),
