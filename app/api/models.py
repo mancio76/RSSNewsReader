@@ -225,7 +225,7 @@ class ScrapeResponse(BaseModel):
 class ErrorResponse(BaseModel):
     detail: str
     error_code: Optional[str] = None
-    timestamp: datetime = datetime.utcnow()
+    timestamp: datetime = datetime.now(datetime.timezone.utc).isoformat()
 
 # Allow forward references
 CategoryResponse.model_rebuild()

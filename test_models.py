@@ -73,7 +73,7 @@ def test_models():
             url="https://example.com/article-1",
             author="Test Author",
             source_id=source.id,
-            published_date=datetime.now(),
+            published_date=datetime.now(datetime.timezone.utc),
             word_count=10,
             language="it"
         )

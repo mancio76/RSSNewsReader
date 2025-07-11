@@ -20,7 +20,7 @@ class ArticleVersion(Base):
     change_description = Column(Text)
     
     # Timestamp
-    created_date = Column(DateTime, default=datetime.datetime.utcnow)
+    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc))
     
     # Relazioni
     article = relationship("Article", back_populates="versions")

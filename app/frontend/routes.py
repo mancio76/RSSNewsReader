@@ -34,7 +34,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
     active_sources = db.query(Source).filter(Source.is_active == True).count()
     
     # Articoli recenti (ultimi 7 giorni)
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_ago = datetime.now(datetime.timezone.utc) - timedelta(days=7)
     recent_articles = db.query(Article).filter(Article.scraped_date >= week_ago).count()
     
     # Top sources per numero articoli
@@ -193,7 +193,7 @@ async def sources_list(request: Request, db: Session = Depends(get_db)):
         article_count = db.query(Article).filter(Article.source_id == source.id).count()
         recent_articles = db.query(Article).filter(
             Article.source_id == source.id,
-            Article.scraped_date >= datetime.utcnow() - timedelta(days=7)
+            Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
         ).count()
         
         # Crea un dict completamente serializzabile (NO oggetti datetime)
@@ -231,7 +231,7 @@ async def analytics(request: Request, db: Session = Depends(get_db)):
     """Pagina analytics"""
     
     # Timeline ultimi 30 giorni
-    end_date = datetime.utcnow()
+    end_date = datetime.now(datetime.timezone.utc)
     start_date = end_date - timedelta(days=30)
     
     timeline_data = db.query(
@@ -316,7 +316,7 @@ async def toggle_source(source_id: int, db: Session = Depends(get_db)):
     source = db.query(Source).filter(Source.id == source_id).first()
     if source:
         source.is_active = not source.is_active
-        source.updated_date = datetime.utcnow()
+        source.updated_date = datetime.now(datetime.timezone.utc)
         db.commit()
     
     return {"success": True, "is_active": source.is_active if source else False}

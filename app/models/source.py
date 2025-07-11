@@ -29,8 +29,8 @@ class Source(Base):
     last_error = Column(Text)
     
     # Timestamp
-    created_date = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_date = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc)) ## datetime.datetime.utcnow
+    updated_date = Column(DateTime, default=datetime.now(datetime.timezone.utc), onupdate=datetime.now(datetime.timezone.utc))
     
     # Relazioni
     articles = relationship("Article", back_populates="source", cascade="all, delete-orphan")

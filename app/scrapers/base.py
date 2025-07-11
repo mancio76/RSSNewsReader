@@ -113,9 +113,21 @@ class BaseReader(ABC):
         """Get source information"""
         pass
     
+    def UTCNOW(self) -> datetime:
+        """Get current UTC time"""
+        return datetime.now(datetime.timezone.utc)
+
+    def LocalTimeZone(self) -> datetime.tzinfo:
+        """Get local timezone info"""
+        return datetime.now().astimezone().tzinfo
+
+    def LOCALNOW(self) -> datetime:
+        """Get current UTC time"""
+        return datetime.now(self.LocalTimeZone())
+
     def get_last_update(self) -> datetime:
         """Get last update timestamp"""
-        return datetime.now()
+        return datetime.now(datetime.timezone.utc)
     
     def clean_text(self, text: str) -> str:
         """Clean and normalize text"""

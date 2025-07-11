@@ -65,8 +65,7 @@ async def http_exception_handler(request: Request, exc: HTTPException):
         content=ErrorResponse(
             detail=exc.detail,
             error_code=f"HTTP_{exc.status_code}",
-            # timestamp=datetime.utcnow()
-            timestamp=datetime.now()
+            timestamp=datetime.now(datetime.timezone.utc).isoformat()
         )
     )
 
@@ -78,8 +77,8 @@ async def general_exception_handler(request: Request, exc: Exception):
         content=ErrorResponse(
             detail="Internal server error",
             error_code="INTERNAL_ERROR",
-            timestamp=datetime.utcnow()
-        ).dict()
+            timestamp=datetime.now(datetime.timezone.utc).isoformat()
+        )
     )
 
 # Startup event
@@ -118,7 +117,7 @@ async def root():
             "tags": "/tags",
             "statistics": "/statistics"
         },
-        "timestamp": datetime.utcnow().isoformat(),
+        "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
         "status": "running"
     }
 
@@ -144,7 +143,7 @@ async def health_check():
         
         return {
             "status": "healthy" if db_status == "healthy" else "degraded",
-            "timestamp": datetime.utcnow().isoformat(),
+            "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
             "database": db_status,
             "article_count": article_count,
             "version": "1.0.0"
@@ -155,7 +154,7 @@ async def health_check():
             status_code=503,
             content={
                 "status": "unhealthy",
-                "timestamp": datetime.utcnow().isoformat(),
+                "timestamp": datetime.now(datetime.timezone.utc).isoformat(),
                 "error": str(e)
             }
         )

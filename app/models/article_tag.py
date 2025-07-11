@@ -13,7 +13,7 @@ class ArticleTag(Base):
     # Metadati associazione
     confidence = Column(Float, default=1.0)  # confidenza se estratto automaticamente
     source = Column(String(20), default='manual')  # manual, nlp, auto
-    created_date = Column(DateTime, default=datetime.datetime.utcnow)
+    created_date = Column(DateTime, default=datetime.now(datetime.timezone.utc))
     
     # Relazioni
     article = relationship("Article")

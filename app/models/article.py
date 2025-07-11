@@ -19,8 +19,8 @@ class Article(Base):
     
     # Date
     published_date = Column(DateTime)
-    scraped_date = Column(DateTime, default=datetime.datetime.utcnow)
-    updated_date = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
+    scraped_date = Column(DateTime, default=datetime.now(datetime.timezone.utc)) ## datetime.datetime.utcnow
+    updated_date = Column(DateTime, default=datetime.now(datetime.timezone.utc), onupdate=datetime.now(datetime.timezone.utc))
     
     # Hashing per deduplicazione
     content_hash = Column(String(64), index=True)

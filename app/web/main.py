@@ -44,7 +44,7 @@ async def dashboard(request: Request, db: Session = Depends(get_db)):
         .limit(10).all()
     
     # Articoli ultimi 7 giorni
-    week_ago = datetime.utcnow() - timedelta(days=7)
+    week_ago = datetime.now(datetime.timezone.utc) - timedelta(days=7)
     recent_count = db.query(Article).filter(Article.scraped_date >= week_ago).count()
     
     return templates.TemplateResponse("dashboard.html", {
@@ -155,7 +155,7 @@ async def sources_page(request: Request, db: Session = Depends(get_db)):
         article_count = db.query(Article).filter(Article.source_id == source.id).count()
         recent_count = db.query(Article).filter(
             Article.source_id == source.id,
-            Article.scraped_date >= datetime.utcnow() - timedelta(days=7)
+            Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
         ).count()
         
         source_stats.append({
@@ -193,7 +193,7 @@ async def source_detail(request: Request, source_id: int, db: Session = Depends(
     total_articles = db.query(Article).filter(Article.source_id == source_id).count()
     recent_articles = db.query(Article).filter(
         Article.source_id == source_id,
-        Article.scraped_date >= datetime.utcnow() - timedelta(days=7)
+        Article.scraped_date >= datetime.now(datetime.timezone.utc) - timedelta(days=7)
     ).count()
     
     return templates.TemplateResponse("source_detail.html", {
@@ -232,7 +232,7 @@ async def analytics_page(request: Request, db: Session = Depends(get_db)):
     
     # Dati per grafici
     # Articoli per giorno (ultimi 30 giorni)
-    end_date = datetime.utcnow()
+    end_date = datetime.now(datetime.timezone.utc)
     start_date = end_date - timedelta(days=30)
     
     daily_stats = db.query(

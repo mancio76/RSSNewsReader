@@ -136,8 +136,8 @@ async def create_source(source_create: SourceCreate, db: Session = Depends(get_d
         rate_limit_delay=source_create.rate_limit_delay,
         update_frequency=source_create.update_frequency,
         scraping_config=source_create.scraping_config,
-        created_date=datetime.utcnow(),
-        updated_date=datetime.utcnow()
+        created_date=datetime.now(datetime.timezone.utc),
+        updated_date=datetime.now(datetime.timezone.utc)
     )
     
     try:
@@ -186,7 +186,7 @@ async def update_source(
             value = str(value)
         setattr(source, field, value)
     
-    source.updated_date = datetime.utcnow()
+    source.updated_date = datetime.now(datetime.timezone.utc)
     
     try:
         db.commit()
@@ -253,8 +253,8 @@ async def scrape_source(
         )
     
     # Controlla se necessita aggiornamento
-    if not force_update and source.next_scrape and source.next_scrape > datetime.utcnow():
-        time_left = (source.next_scrape - datetime.utcnow()).total_seconds()
+    if not force_update and source.next_scrape and source.next_scrape > datetime.now(datetime.timezone.utc):
+        time_left = (source.next_scrape - datetime.now(datetime.timezone.utc)).total_seconds()
         raise HTTPException(
             status_code=status.HTTP_429_TOO_MANY_REQUESTS,
             detail=f"Source not ready for scraping. Try again in {int(time_left)} seconds"
@@ -262,11 +262,11 @@ async def scrape_source(
     
     try:
         manager = ScraperManager(db)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(datetime.timezone.utc)
         
         articles = await manager.scrape_source(source)
         
-        end_time = datetime.utcnow()
+        end_time = datetime.now(datetime.timezone.utc)
         duration = (end_time - start_time).total_seconds()
         
         from ..models import ScrapeResult
@@ -328,7 +328,7 @@ async def scrape_sources(
             sources = db.query(Source).filter(Source.is_active == True).all()
         else:
             # Solo quelle che necessitano aggiornamento
-            now = datetime.utcnow()
+            now = datetime.now(datetime.timezone.utc)
             sources = db.query(Source).filter(
                 Source.is_active == True,
                 (Source.next_scrape.is_(None)) | (Source.next_scrape <= now)
@@ -345,7 +345,7 @@ async def scrape_sources(
     
     try:
         manager = ScraperManager(db)
-        start_time = datetime.utcnow()
+        start_time = datetime.now(datetime.timezone.utc)
         
         # Scrape in parallelo
         results = []
@@ -355,9 +355,9 @@ async def scrape_sources(
         
         for source in sources:
             try:
-                source_start = datetime.utcnow()
+                source_start = datetime.now(datetime.timezone.utc)
                 articles = await manager.scrape_source(source)
-                source_end = datetime.utcnow()
+                source_end = datetime.now(datetime.timezone.utc)
                 source_duration = (source_end - source_start).total_seconds()
                 
                 from ..models import ScrapeResult
@@ -386,7 +386,7 @@ async def scrape_sources(
                 results.append(result)
                 error_count += 1
         
-        end_time = datetime.utcnow()
+        end_time = datetime.now(datetime.timezone.utc)
         total_duration = (end_time - start_time).total_seconds()
         
         return ScrapeResponse(

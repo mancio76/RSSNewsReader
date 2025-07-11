@@ -166,7 +166,7 @@ async def update_article(
         article.generate_content_hash()
         article.word_count = len(article.content.split()) if article.content else 0
     
-    article.updated_date = datetime.utcnow()
+    article.updated_date = datetime.now(datetime.timezone.utc)
     
     try:
         db.commit()
@@ -319,7 +319,7 @@ async def search_articles(
 async def get_article_stats(db: Session = Depends(get_db)):
     """Get article statistics"""
     
-    now = datetime.utcnow()
+    now = datetime.now(datetime.timezone.utc)
     today = now.replace(hour=0, minute=0, second=0, microsecond=0)
     week_ago = today - timedelta(days=7)
     month_ago = today - timedelta(days=30)

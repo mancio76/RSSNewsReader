@@ -402,7 +402,7 @@ class CLIManager:
             confirm = input(f"\nConfermi le modifiche? (y/N): ").strip().lower()
             
             if confirm in ['y', 'yes', 'si', 's']:
-                source.updated_date = datetime.utcnow()
+                source.updated_date = datetime.now(datetime.timezone.utc)
                 self.db.commit()
                 print(f"✅ Source {source_id} modificata con successo.")
             else:
@@ -517,8 +517,8 @@ class CLIManager:
                 rate_limit_delay=rate_limit_delay,
                 update_frequency=update_frequency,
                 scraping_config=scraping_config,
-                created_date=datetime.utcnow(),
-                updated_date=datetime.utcnow()
+                created_date=datetime.now(datetime.timezone.utc),
+                updated_date=datetime.now(datetime.timezone.utc)
             )
             
             # Mostra riepilogo

@@ -215,11 +215,11 @@ async def test_concurrent_scraping():
             manager = ScraperManager(db)
             
             print("   Starting concurrent scraping...")
-            start_time = datetime.now()
+            start_time = datetime.now(datetime.timezone.utc)
             
             results = await manager.scrape_all_active_sources()
             
-            end_time = datetime.now()
+            end_time = datetime.now(datetime.timezone.utc)
             duration = (end_time - start_time).total_seconds()
             
             total_articles = sum(len(articles) for articles in results.values())
