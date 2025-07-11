@@ -188,7 +188,7 @@ async def sources_list(request: Request, db: Session = Depends(get_db)):
     sources_query = db.query(Source).order_by(Source.name).all()
     
     # Prepara dati completamente serializzabili
-    sources_data = []
+    sources = []
     for source in sources_query:
         article_count = db.query(Article).filter(Article.source_id == source.id).count()
         recent_articles = db.query(Article).filter(
@@ -218,11 +218,11 @@ async def sources_list(request: Request, db: Session = Depends(get_db)):
             'created_date': source.created_date.isoformat() if source.created_date else None,
             'updated_date': source.updated_date.isoformat() if source.updated_date else None
         }
-        sources_data.append(source_dict)
+        sources.append(source_dict)
     
     return templates.TemplateResponse("sources.html", {
         "request": request,
-        "sources": sources_data,
+        "sources": sources,
         "page_title": "Sources"
     })
 

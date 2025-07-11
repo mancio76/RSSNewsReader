@@ -306,7 +306,165 @@ async function testScrapingConfig() {
     
     if (!baseUrl) {
         showToast('Inserisci prima l\'URL base della source', 'error');
-        return;{% extends "base.html" %}
+        return;
+    }
+}
+
+// Toggle source status
+async function toggleSource(sourceId, checkbox) {
+    try {
+        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
+        } else {
+            // Revert checkbox state on error
+            checkbox.checked = !checkbox.checked;
+            showToast('Errore nel cambiare stato della source', 'error');
+        }
+    } catch (error) {
+        checkbox.checked = !checkbox.checked;
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Scrape single source
+async function scrapeSource(sourceId) {
+    try {
+        showToast('Avvio scraping...', 'info');
+        
+        const response = await fetch(`/sources/${sourceId}/scrape`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            const articlesCount = result.results[0]?.articles_scraped || 0;
+            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
+            
+            // Refresh page after delay
+            setTimeout(() => location.reload(), 2000);
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Delete source
+async function deleteSource(sourceId, sourceName) {
+    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/sources/${sourceId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Source eliminata con successo', 'success');
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Edit source (placeholder)
+function editSource(sourceId) {
+    showToast('Funzionalità di modifica in sviluppo', 'info');
+}
+
+// Modal functions
+function showAddSourceModal() {
+    document.getElementById('addSourceModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideAddSourceModal() {
+    document.getElementById('addSourceModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('addSourceForm').reset();
+}
+
+// Add source form submission
+document.getElementById('addSourceForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        base_url: formData.get('base_url'),
+        rss_url: formData.get('rss_url') || null,
+        description: formData.get('description') || null,
+        is_active: formData.get('is_active') === 'on',
+        update_frequency: parseInt(formData.get('update_frequency')),
+        rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
+    };
+    
+    try {
+        showToast('Creazione source in corso...', 'info');
+        
+        const response = await fetch('/sources/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Source "${data.name}" creata con successo!`, 'success');
+            hideAddSourceModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+// Close modal on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideAddSourceModal();
+    }
+});
+
+// Close modal on backdrop click
+document.getElementById('addSourceModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddSourceModal();
+    }
+});
+
+// Auto-refresh sources every 60 seconds
+setInterval(() => {
+    // You could implement partial updates here
+    console.log('Auto-refresh would happen here');
+}, 60000);
+</script>        
+{% endblock %}
+
+{% extends "base.html" %}
 
 {% block page_subtitle %}
 Gestisci le fonti RSS e web scraping
@@ -327,6 +485,7 @@ Gestisci le fonti RSS e web scraping
 
 <!-- Grid delle sources -->
 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <!-- Loop through sources -->
     {% for source in sources %}
     <div class="card hover:shadow-lg transition-shadow">
         <!-- Header source -->
@@ -414,10 +573,11 @@ Gestisci le fonti RSS e web scraping
         <!-- Actions -->
         <div class="px-6 pb-6">
             <div class="flex space-x-2">
+                <!-- buttons -->
                 <button onclick="scrapeSource({{ source.id }})" 
                         class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
                     <i class="fas fa-sync-alt mr-1"></i>
-                    Scrape
+                    Scrape{{ source.id }}
                 </button>
                 <button onclick="editSource({{ source.id }})" 
                         class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
@@ -834,160 +994,4 @@ Gestisci le fonti RSS e web scraping
         </form>
     </div>
 </div>
-{% endblock %}
-
-{% block extra_js %}
-<script>
-// Toggle source status
-async function toggleSource(sourceId, checkbox) {
-    try {
-        const response = await fetch(`/web/sources/toggle/${sourceId}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showToast(`Source ${result.is_active ? 'attivata' : 'disattivata'}`, 'success');
-        } else {
-            // Revert checkbox state on error
-            checkbox.checked = !checkbox.checked;
-            showToast('Errore nel cambiare stato della source', 'error');
-        }
-    } catch (error) {
-        checkbox.checked = !checkbox.checked;
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Scrape single source
-async function scrapeSource(sourceId) {
-    try {
-        showToast('Avvio scraping...', 'info');
-        
-        const response = await fetch(`/sources/${sourceId}/scrape`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            }
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            const articlesCount = result.results[0]?.articles_scraped || 0;
-            showToast(`Scraping completato: ${articlesCount} articoli trovati`, 'success');
-            
-            // Refresh page after delay
-            setTimeout(() => location.reload(), 2000);
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Delete source
-async function deleteSource(sourceId, sourceName) {
-    if (!confirm(`Sei sicuro di voler eliminare la source "${sourceName}"?\n\nTutti gli articoli associati verranno eliminati.`)) {
-        return;
-    }
-    
-    try {
-        const response = await fetch(`/sources/${sourceId}`, {
-            method: 'DELETE'
-        });
-        
-        if (response.ok) {
-            showToast('Source eliminata con successo', 'success');
-            location.reload();
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-}
-
-// Edit source (placeholder)
-function editSource(sourceId) {
-    showToast('Funzionalità di modifica in sviluppo', 'info');
-}
-
-// Modal functions
-function showAddSourceModal() {
-    document.getElementById('addSourceModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
-function hideAddSourceModal() {
-    document.getElementById('addSourceModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    document.getElementById('addSourceForm').reset();
-}
-
-// Add source form submission
-document.getElementById('addSourceForm').addEventListener('submit', async function(e) {
-    e.preventDefault();
-    
-    const formData = new FormData(this);
-    const data = {
-        name: formData.get('name'),
-        base_url: formData.get('base_url'),
-        rss_url: formData.get('rss_url') || null,
-        description: formData.get('description') || null,
-        is_active: formData.get('is_active') === 'on',
-        update_frequency: parseInt(formData.get('update_frequency')),
-        rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
-    };
-    
-    try {
-        showToast('Creazione source in corso...', 'info');
-        
-        const response = await fetch('/sources/', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(data)
-        });
-        
-        if (response.ok) {
-            const result = await response.json();
-            showToast(`Source "${data.name}" creata con successo!`, 'success');
-            hideAddSourceModal();
-            location.reload();
-        } else {
-            const error = await response.json();
-            showToast(`Errore: ${error.detail}`, 'error');
-        }
-    } catch (error) {
-        showToast('Errore di connessione', 'error');
-    }
-});
-
-// Close modal on escape key
-document.addEventListener('keydown', function(e) {
-    if (e.key === 'Escape') {
-        hideAddSourceModal();
-    }
-});
-
-// Close modal on backdrop click
-document.getElementById('addSourceModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        hideAddSourceModal();
-    }
-});
-
-// Auto-refresh sources every 60 seconds
-setInterval(() => {
-    // You could implement partial updates here
-    console.log('Auto-refresh would happen here');
-}, 60000);
-</script>
 {% endblock %}
