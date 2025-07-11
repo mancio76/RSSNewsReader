@@ -1214,7 +1214,7 @@ document.getElementById('editSourceForm').addEventListener('submit', async funct
     
     const formData = new FormData(this);
     const data = {
-        id: parseInt(formData.get('source_id')),
+        source_id: parseInt(formData.get('source_id')),
         name: formData.get('name'),
         base_url: formData.get('base_url'),
         rss_url: formData.get('rss_url') || null,
