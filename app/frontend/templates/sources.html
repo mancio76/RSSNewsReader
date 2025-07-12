@@ -147,7 +147,7 @@ Gestisci le fonti RSS e web scraping
     {% endif %}
 </div>
 
-<!-- Modal per aggiungere source -->
+<!-- Modal per Add Source -->
 <div id="addSourceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
     <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
         <div class="p-6 border-b border-gray-200">
@@ -255,6 +255,117 @@ Gestisci le fonti RSS e web scraping
                 <button type="submit" class="btn-primary">
                     <i class="fas fa-plus mr-2"></i>
                     Aggiungi Source
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal per Edit Source -->
+<div id="editSourceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Modifica Source</h3>
+                <button onclick="hideEditSourceModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <form id="editSourceForm" class="p-6">
+            <input type="hidden" name="source_id" id="editSourceId">
+            
+            <div class="space-y-4">
+                <!-- Nome -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Source *</label>
+                    <input type="text" name="name" id="editSourceName" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- URL Base -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">URL Base *</label>
+                    <input type="url" name="base_url" id="editSourceBaseUrl" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- RSS URL -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">RSS URL (opzionale)</label>
+                    <input type="url" name="rss_url" id="editSourceRssUrl" 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <!-- Descrizione -->
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
+                    <textarea name="description" id="editSourceDescription" rows="2" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
+                </div>
+                
+                <!-- Configurazione Scraping Edit -->
+                <div id="editScrapingConfigSection">
+                    <div class="flex items-center justify-between mb-3">
+                        <label class="block text-sm font-medium text-gray-700">Configurazione Scraping</label>
+                        <button type="button" onclick="editScrapingConfig()" 
+                                class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                            <i class="fas fa-cog mr-1"></i>
+                            Modifica
+                        </button>
+                    </div>
+                    <div id="editScrapingConfigPreview" class="p-3 bg-gray-50 rounded-lg border border-gray-300 text-sm">
+                        <div class="text-gray-500">Nessuna configurazione</div>
+                    </div>
+                    <input type="hidden" name="scraping_config" id="editScrapingConfigData" value="">
+                </div>
+                
+                <!-- Configurazioni avanzate -->
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Frequenza Update (ore)</label>
+                        <select name="update_frequency" id="editSourceUpdateFreq" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="3600">1 ora</option>
+                            <option value="7200">2 ore</option>
+                            <option value="21600">6 ore</option>
+                            <option value="43200">12 ore</option>
+                            <option value="86400">24 ore</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Rate Limit (secondi)</label>
+                        <select name="rate_limit_delay" id="editSourceRateLimit" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="1">1 secondo</option>
+                            <option value="2">2 secondi</option>
+                            <option value="5">5 secondi</option>
+                            <option value="10">10 secondi</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <!-- Stato attivo -->
+                <div class="flex items-center">
+                    <input type="hidden" name="is_active" value="false">
+                    <input type="checkbox" id="editSourceActive" name="is_active" 
+                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                    <label for="editSourceActive" class="ml-2 block text-sm text-gray-700">
+                        Source attiva
+                    </label>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button type="button" onclick="hideEditSourceModal()" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    Annulla
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Salva Modifiche
                 </button>
             </div>
         </form>
@@ -423,117 +534,6 @@ Gestisci le fonti RSS e web scraping
         </div>
     </div>
 </div>
-
-<!-- Modal per Edit Source -->
-<div id="editSourceModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
-    <div class="bg-white rounded-lg max-w-2xl w-full mx-4 max-h-[90vh] overflow-y-auto">
-        <div class="p-6 border-b border-gray-200">
-            <div class="flex items-center justify-between">
-                <h3 class="text-lg font-semibold text-gray-900">Modifica Source</h3>
-                <button onclick="hideEditSourceModal()" class="text-gray-400 hover:text-gray-600">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-        </div>
-        
-        <form id="editSourceForm" class="p-6">
-            <input type="hidden" name="source_id" id="editSourceId">
-            
-            <div class="space-y-4">
-                <!-- Nome -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Source *</label>
-                    <input type="text" name="name" id="editSourceName" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- URL Base -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">URL Base *</label>
-                    <input type="url" name="base_url" id="editSourceBaseUrl" required 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- RSS URL -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">RSS URL (opzionale)</label>
-                    <input type="url" name="rss_url" id="editSourceRssUrl" 
-                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                </div>
-                
-                <!-- Descrizione -->
-                <div>
-                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
-                    <textarea name="description" id="editSourceDescription" rows="2" 
-                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"></textarea>
-                </div>
-                
-                <!-- Configurazione Scraping Edit -->
-                <div id="editScrapingConfigSection">
-                    <div class="flex items-center justify-between mb-3">
-                        <label class="block text-sm font-medium text-gray-700">Configurazione Scraping</label>
-                        <button type="button" onclick="editScrapingConfig()" 
-                                class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                            <i class="fas fa-cog mr-1"></i>
-                            Modifica
-                        </button>
-                    </div>
-                    <div id="editScrapingConfigPreview" class="p-3 bg-gray-50 rounded-lg border border-gray-300 text-sm">
-                        <div class="text-gray-500">Nessuna configurazione</div>
-                    </div>
-                    <input type="hidden" name="scraping_config" id="editScrapingConfigData" value="">
-                </div>
-                
-                <!-- Configurazioni avanzate -->
-                <div class="grid grid-cols-2 gap-4">
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Frequenza Update (ore)</label>
-                        <select name="update_frequency" id="editSourceUpdateFreq" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                            <option value="3600">1 ora</option>
-                            <option value="7200">2 ore</option>
-                            <option value="21600">6 ore</option>
-                            <option value="43200">12 ore</option>
-                            <option value="86400">24 ore</option>
-                        </select>
-                    </div>
-                    
-                    <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">Rate Limit (secondi)</label>
-                        <select name="rate_limit_delay" id="editSourceRateLimit" 
-                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
-                            <option value="1">1 secondo</option>
-                            <option value="2">2 secondi</option>
-                            <option value="5">5 secondi</option>
-                            <option value="10">10 secondi</option>
-                        </select>
-                    </div>
-                </div>
-                
-                <!-- Stato attivo -->
-                <div class="flex items-center">
-                    <input type="hidden" name="is_active" value="false">
-                    <input type="checkbox" id="editSourceActive" name="is_active" 
-                           class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
-                    <label for="editSourceActive" class="ml-2 block text-sm text-gray-700">
-                        Source attiva
-                    </label>
-                </div>
-            </div>
-            
-            <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
-                <button type="button" onclick="hideEditSourceModal()" 
-                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
-                    Annulla
-                </button>
-                <button type="submit" class="btn-primary">
-                    <i class="fas fa-save mr-2"></i>
-                    Salva Modifiche
-                </button>
-            </div>
-        </form>
-    </div>
-</div>
 {% endblock %}
 
 {% block extra_js %}
@@ -658,6 +658,7 @@ async function editSource(sourceId) {
         }
         
         const source = await response.json();
+        console.log('Source data loaded:', source); // Debug
         
         // Populate form
         document.getElementById('editSourceId').value = source.id;
@@ -711,6 +712,7 @@ function hideEditSourceModal() {
     document.body.style.overflow = 'auto';
     currentEditingSourceId = null;
     currentScrapingConfig = {};
+    updateScrapingConfigPreview('edit');
 }
 
 // Modal functions for Scraping Config
@@ -951,18 +953,7 @@ async function deleteSource(sourceId, sourceName) {
     }
 }
 
-// Edit source (placeholder)
-// function editSource(sourceId) {
-//     showEditSourceModal();
-//     //showToast('Funzionalità di modifica in sviluppo', 'info');
-// }
-
 // Modal functions
-function showAddSourceModal() {
-    document.getElementById('addSourceModal').classList.remove('hidden');
-    document.body.style.overflow = 'hidden';
-}
-
 function hideAddSourceModal() {
     document.getElementById('addSourceModal').classList.add('hidden');
     document.body.style.overflow = 'auto';
@@ -1212,10 +1203,10 @@ document.getElementById('addSourceForm').addEventListener('submit', async functi
 document.getElementById('editSourceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
-    source_id: parseInt(formData.get('source_id'))
     const formData = new FormData(this);
+    const source_id: parseInt(formData.get('source_id'));
     const data = {
-        //source_id: source_id,
+        source_id: source_id,
         name: formData.get('name'),
         base_url: formData.get('base_url'),
         rss_url: formData.get('rss_url') || null,
@@ -1225,6 +1216,16 @@ document.getElementById('editSourceForm').addEventListener('submit', async funct
         rate_limit_delay: parseInt(formData.get('rate_limit_delay'))
     };
     
+    // scraping_config se presente
+    const scrapingConfigData = document.getElementById('editScrapingConfigData').value;
+    if (scrapingConfigData) {
+        try {
+            data.scraping_config = JSON.parse(scrapingConfigData);
+        } catch (e) {
+            console.warn('Invalid scraping config JSON');
+        }
+    }
+
     try {
         showToast('Modifica source in corso...', 'info');
         
@@ -1246,6 +1247,7 @@ document.getElementById('editSourceForm').addEventListener('submit', async funct
             showToast(`Errore: ${error.detail}`, 'error');
         }
     } catch (error) {
+        console.error('Edit source error:', error);
         showToast('Errore di connessione', 'error');
     }
 });
