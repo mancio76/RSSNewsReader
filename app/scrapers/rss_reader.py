@@ -5,6 +5,7 @@ from urllib.parse import urljoin, urlparse
 import asyncio
 import re
 from dateutil import parser as date_parser
+import feedparser.encodings
 
 from .base import BaseReader, ScrapedArticle
 
@@ -13,8 +14,8 @@ class RSSReader(BaseReader):
     
     def __init__(self, source_config: Dict[str, Any]):
         super().__init__(source_config)
-        self.rss_url = source_config.get('rss_url') or source_config.get('base_url')
-        self.base_url = source_config.get('base_url', '')
+        self.rss_url = str(source_config.get('rss_url') or source_config.get('base_url'))
+        self.base_url = str(source_config.get('base_url', ''))
         self.max_articles = source_config.get('max_articles', 50)
         
         # Configurazione parsing
@@ -35,7 +36,14 @@ class RSSReader(BaseReader):
                 return []
             
             # Parse RSS
-            feed = feedparser.parse(rss_content)
+            try:
+                feed = feedparser.parse(rss_content)
+            except Exception as e:
+                self.logger.warning(f"Error parsing RSS articles: {str(e)}")
+                self.logger.info(f"Changing encoding to latin-1 and retrying...")
+                
+                rss_content = rss_content.encode('latin-1', 'ignore').decode('utf-8')
+                feed = feedparser.parse(rss_content)
             
             if feed.bozo:
                 self.logger.warning(f"RSS feed has parsing errors: {feed.bozo_exception}")
@@ -129,7 +137,7 @@ class RSSReader(BaseReader):
                 elif isinstance(field_value, str):
                     content = field_value
                 elif hasattr(field_value, 'value'):
-                    content = field_value.value
+                    content = field_value.value # type: ignore
                 else:
                     continue
                 
@@ -217,6 +225,10 @@ class RSSReader(BaseReader):
         
         if hasattr(entry, 'enclosures'):
             metadata['enclosures'] = [enc.href for enc in entry.enclosures]
+            
+        # Consiglio Regione Lazio
+        if hasattr(entry, 'enclosure'):
+            metadata['enclosures'] = [enc.url for enc in entry.enclosure]
         
         return metadata
     

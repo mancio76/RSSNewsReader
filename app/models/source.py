@@ -26,7 +26,7 @@ class Source(Base):
     # Stato
     is_active = Column(Boolean, default=True)
     error_count = Column(Integer, default=0)
-    last_error = Column(Text)
+    last_error = Column(Text, nullable=True)
     
     # Timestamp
     created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc)) ## datetime.datetime.utcnow

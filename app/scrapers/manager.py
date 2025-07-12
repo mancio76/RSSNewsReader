@@ -27,14 +27,14 @@ class ScraperManager:
                 'rate_limit_delay': source.rate_limit_delay,
                 'timeout': 30,
                 'max_retries': 3,
-                'max_articles': 50
+                'max_articles': 100
             }
             
             # Scegli il reader basato sulla configurazione
-            if source.rss_url:
+            if source.rss_url is not None:
                 self.logger.info(f"Creating RSSReader for source {source.name}")
                 return RSSReader(config)
-            elif source.scraping_config:
+            elif source.scraping_config is not None:
                 self.logger.info(f"Creating WebReader for source {source.name}")
                 return WebReader(config)
             else:
@@ -61,8 +61,8 @@ class ScraperManager:
                 # Valida source
                 if not await reader.validate_source():
                     self.logger.error(f"Source validation failed: {source.name}")
-                    source.error_count += 1
-                    source.last_error = "Source validation failed"
+                    source.error_count += 1 # type: ignore
+                    source.last_error = "Source validation failed" # type: ignore
                     self.db.commit()
                     return []
                 
@@ -80,10 +80,10 @@ class ScraperManager:
                         articles.append(article)
                 
                 # Aggiorna source metadata
-                source.last_scraped = dt.datetime.now(dt.timezone.utc)
-                source.next_scrape = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=source.update_frequency)
-                source.error_count = 0
-                source.last_error = None
+                source.last_scraped = dt.datetime.now(dt.timezone.utc) # type: ignore
+                source.next_scrape = dt.datetime.now(dt.timezone.utc) + dt.timedelta(seconds=source.update_frequency) # type: ignore
+                source.error_count = 0 # type: ignore
+                source.last_error = None # type: ignore
                 self.db.commit()
                 
                 self.logger.info(f"Successfully scraped {len(articles)} articles from {source.name}")
@@ -91,8 +91,8 @@ class ScraperManager:
                 
         except Exception as e:
             self.logger.error(f"Error scraping source {source.name}: {str(e)}")
-            source.error_count += 1
-            source.last_error = str(e)
+            source.error_count += 1 # type: ignore
+            source.last_error = str(e) # type: ignore
             self.db.commit()
             return []
     
@@ -124,20 +124,20 @@ class ScraperManager:
             article.generate_url_hash()
             
             # Controlla duplicati per content hash
-            if article.content_hash:
+            if article.content_hash is not None:
                 duplicate = self.db.query(Article).filter_by(content_hash=article.content_hash).first()
                 if duplicate:
                     self.logger.debug(f"Duplicate content found for: {scraped_article.title}")
-                    article.is_duplicate = True
+                    article.is_duplicate = True # type: ignore
             
             self.db.add(article)
             self.db.flush()  # Per ottenere l'ID senza commit
             
             # Salva tags
-            await self._save_article_tags(article, scraped_article.tags)
+            await self._save_article_tags(article, scraped_article.tags) # type: ignore
             
             # Salva metadata
-            await self._save_article_metadata(article, scraped_article.metadata)
+            await self._save_article_metadata(article, scraped_article.metadata) # type: ignore
             
             self.db.commit()
             
@@ -230,7 +230,7 @@ class ScraperManager:
                     self.logger.error(f"Scraping task failed: {str(result)}")
                     continue
                 
-                source_name, articles = result
+                source_name, articles = result # type: ignore
                 results[source_name] = articles
                 total_articles += len(articles)
             
@@ -286,15 +286,15 @@ class ScraperManager:
                         results[source.name] = is_valid
                         
                         if not is_valid:
-                            source.error_count += 1
-                            source.last_error = "Validation failed"
+                            source.error_count += 1 # type: ignore
+                            source.last_error = "Validation failed" # type: ignore
                         else:
-                            source.error_count = 0
-                            source.last_error = None
+                            source.error_count = 0 # type: ignore
+                            source.last_error = None # type: ignore
                 else:
                     results[source.name] = False
-                    source.error_count += 1
-                    source.last_error = "Could not create reader"
+                    source.error_count += 1 # type: ignore
+                    source.last_error = "Could not create reader" # type: ignore
             
             self.db.commit()
             return results

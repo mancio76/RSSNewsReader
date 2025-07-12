@@ -683,7 +683,8 @@ async function editSource(sourceId) {
         showEditSourceModal();
         
     } catch (error) {
-        showToast('Errore di connessione', 'error');
+        showDetailedError(error, 'Errore nel modificare i dati della source');
+        // showToast('Errore di connessione', 'error');
     }
 }
 
@@ -953,13 +954,6 @@ async function deleteSource(sourceId, sourceName) {
     }
 }
 
-// Modal functions
-function hideAddSourceModal() {
-    document.getElementById('addSourceModal').classList.add('hidden');
-    document.body.style.overflow = 'auto';
-    document.getElementById('addSourceForm').reset();
-}
-
 // 5. AGGIUNTA: Funzione per validare source
 function addValidateButton() {
     // Aggiungi bottone validate accanto a scrape in ogni source card
@@ -1159,6 +1153,53 @@ function addExportImportButtons() {
     }
 }
 
+function validateEditFormElements() {
+    const requiredElements = [
+        'editSourceId',
+        'editSourceName', 
+        'editSourceBaseUrl',
+        'editSourceRssUrl',
+        'editSourceDescription',
+        'editSourceUpdateFreq',
+        'editSourceRateLimit',
+        'editSourceActive',
+        'editScrapingConfigData'
+    ];
+    
+    const missing = [];
+    requiredElements.forEach(id => {
+        if (!document.getElementById(id)) {
+            missing.push(id);
+        }
+    });
+    
+    if (missing.length > 0) {
+        console.error('Missing form elements:', missing);
+        return false;
+    }
+    
+    return true;
+}
+
+// Debug function - aggiungi temporaneamente
+function debugEditForm() {
+    const form = document.getElementById('editSourceForm');
+    if (!form) {
+        console.error('editSourceForm not found!');
+        return;
+    }
+    
+    console.log('Form found:', form);
+    console.log('Form elements:', form.elements);
+    
+    // Test submit event
+    form.addEventListener('submit', function(e) {
+        console.log('Form submit triggered!', e);
+    });
+
+    validateEditFormElements();
+}
+
 // Add source form submission
 document.getElementById('addSourceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
@@ -1199,12 +1240,19 @@ document.getElementById('addSourceForm').addEventListener('submit', async functi
     }
 });
 
+// Close modal on backdrop click
+document.getElementById('addSourceModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddSourceModal();
+    }
+});
+
 // Edit source form submission
 document.getElementById('editSourceForm').addEventListener('submit', async function(e) {
     e.preventDefault();
     
     const formData = new FormData(this);
-    const source_id: parseInt(formData.get('source_id'));
+    const source_id = parseInt(formData.get('source_id'));
     const data = {
         source_id: source_id,
         name: formData.get('name'),
@@ -1252,6 +1300,13 @@ document.getElementById('editSourceForm').addEventListener('submit', async funct
     }
 });
 
+// Close modal on backdrop click
+document.getElementById('editSourceModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideEditSourceModal();
+    }
+});
+
 // Close modal on escape key
 document.addEventListener('keydown', function(e) {
     if (e.key === 'Escape') {
@@ -1259,29 +1314,20 @@ document.addEventListener('keydown', function(e) {
     }
 });
 
-// Close modal on backdrop click
-document.getElementById('addSourceModal').addEventListener('click', function(e) {
-    if (e.target === this) {
-        hideAddSourceModal();
-    }
-});
-
-// Chiama la funzione al caricamento della pagina
-document.addEventListener('DOMContentLoaded', setupCheckboxHandling);
-
 // Inizializzazione completa
 document.addEventListener('DOMContentLoaded', function() {
     setupCheckboxHandling();
     addExportImportButtons();
+    addValidateButton(); // Add validate button to each source card
+    
+    debugEditForm(); // Debugging function to check form elements
+
     
     // Auto-refresh stats ogni 2 minuti
-    setInterval(refreshSourceStats, 120000);
+    setInterval(() => {
+        console.log('Aggiornamento Statistiche in corso...');
+        refreshSourceStats();
+    }, 120000);
 });
-
-// Auto-refresh sources every 60 seconds
-setInterval(() => {
-    // You could implement partial updates here
-    console.log('Auto-refresh would happen here');
-}, 60000);
 </script>        
 {% endblock %}

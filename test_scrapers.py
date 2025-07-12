@@ -22,8 +22,8 @@ async def test_rss_reader():
     
     # Configurazione test RSS
     rss_config = {
-        'base_url': 'https://feeds.bbci.co.uk/news/rss.xml',
-        'rss_url': 'https://feeds.bbci.co.uk/news/rss.xml',
+        'base_url': 'https://www.consiglio.regione.lazio.it',
+        'rss_url': 'https://www.consiglio.regione.lazio.it/consiglio-regionale/rss/rssConsiglio.xml',
         'max_articles': 5,
         'rate_limit_delay': 1
     }
@@ -153,7 +153,7 @@ async def test_scraper_manager():
             print(f"   ✅ Validation results: {validation_results}")
             
             # Mostra alcuni articoli dal database
-            saved_articles = db.query(Source).filter_by(name="Test RSS Source").first().articles
+            saved_articles = Source(db.query(Source).filter_by(name="Test RSS Source").first()).articles
             print(f"   📚 Total articles in DB for this source: {len(saved_articles)}")
             
             for i, article in enumerate(saved_articles[:2]):

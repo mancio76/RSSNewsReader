@@ -21,8 +21,8 @@ class ScrapedArticle:
     author: Optional[str] = None
     published_date: Optional[dt.datetime] = None
     summary: Optional[str] = None
-    tags: List[str] = None
-    metadata: Dict[str, Any] = None
+    tags: Optional[List[str]] = None
+    metadata: Optional[Dict[str, Any]] = None
     
     def __post_init__(self):
         if self.tags is None:
@@ -77,6 +77,9 @@ class BaseReader(ABC):
             
             self.logger.info(f"Fetching URL: {url}")
             
+            if not self.session:
+                raise RuntimeError("Session is not initialized. Use 'async with BaseReader(...) as reader:' context manager.")
+            
             async with self.session.get(url) as response:
                 if response.status == 200:
                     content = await response.text()
@@ -115,11 +118,12 @@ class BaseReader(ABC):
     
     def UTCNOW(self) -> dt.datetime:
         """Get current UTC time"""
-        return dt.datetime.now(dt.timezone.utc().utc)
+        return dt.datetime.now(dt.timezone.utc)
 
-    def LocalTimeZone(self) -> dt.datetime.tzinfo:
+    def LocalTimeZone(self) -> dt.tzinfo:
         """Get local timezone info"""
-        return dt.datetime.now().astimezone().tzinfo
+        tz = dt.datetime.now().astimezone().tzinfo
+        return tz if tz is not None else dt.timezone.utc
 
     def LOCALNOW(self) -> dt.datetime:
         """Get current UTC time"""
@@ -127,7 +131,7 @@ class BaseReader(ABC):
 
     def get_last_update(self) -> dt.datetime:
         """Get last update timestamp"""
-        return dt.datetime.now(dt.timezone.utc().utc)
+        return dt.datetime.now(dt.timezone.utc)
     
     def clean_text(self, text: str) -> str:
         """Clean and normalize text"""

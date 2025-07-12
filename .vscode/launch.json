@@ -20,7 +20,7 @@
             }
         },
         {
-            "type": "chrome",
+            "type": "firefox",
             "name": "http://127.0.0.1:8000/web",
             "request": "launch",
             "url": "http://127.0.0.1:8000/web"
