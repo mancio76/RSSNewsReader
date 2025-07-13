@@ -69,6 +69,14 @@ class BaseReader(ABC):
         if self.session:
             await self.session.close()
     
+    async def get_response_content(self, response: aiohttp.ClientResponse) -> str:
+        """Helper per ottenere il testo della risposta"""
+        try:
+            content = await response.text()
+        except Exception as e:
+            content = await response.text(encoding='latin-1')
+        return content
+    
     async def fetch_url(self, url: str, retries: int = 0) -> Optional[str]:
         """Fetch URL con retry logic e rate limiting"""
         try:
@@ -82,7 +90,11 @@ class BaseReader(ABC):
             
             async with self.session.get(url) as response:
                 if response.status == 200:
-                    content = await response.text()
+                    content = await self.get_response_content(response)
+                    if content is None:
+                        self.logger.error(f"Failed to fetch content from {url}")
+                        return None
+                        
                     self.logger.debug(f"Successfully fetched {len(content)} characters from {url}")
                     return content
                 else:
@@ -96,7 +108,7 @@ class BaseReader(ABC):
             return None
             
         except Exception as e:
-            self.logger.error(f"Error fetching {url}: {str(e)}")
+            self.logger.error(f"{type(e)}: Error fetching {url}: {str(e)}")
             if retries < self.max_retries:
                 return await self.fetch_url(url, retries + 1)
             return None

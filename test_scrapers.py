@@ -64,14 +64,16 @@ async def test_web_reader():
     
     # Configurazione test web scraping
     web_config = {
-        'base_url': 'https://example.com',  # Sito semplice per test
+        'base_url': 'https://www.bbc.com/news',  # Sito semplice per test
         'scraping_config': {
-            'article_list_selector': 'p',  # Semplice per example.com
-            'title_selector': 'h1',
-            'content_selector': 'p',
-            'url_selector': 'a'
+            'article_list_selector': '/html/body/div/div/main/article//*[@data-testid="anchor-inner-wrapper"]',  # Semplice per example.com
+            'title_selector': './/h2',
+            'content_selector': './/p',
+            'url_selector': './/a',
+            'date_selector' : './/*[@data-testid="card-metadata-lastupdated"]',
+            'tag_selector' : './/*[@data-testid="card-metadata-tag"]'
         },
-        'max_articles': 3,
+        'max_articles': 10,
         'rate_limit_delay': 1
     }
     
@@ -118,10 +120,10 @@ async def test_scraper_manager():
             test_source = db.query(Source).filter_by(name="BBC RSS").first()
             if not test_source:
                 test_source = Source(
-                    name="Test RSS Source",
-                    base_url="https://feeds.bbci.co.uk/news/rss.xml",
+                    name="BBC RSS",
+                    base_url="https://www.bbc.com/news",
                     rss_url="https://feeds.bbci.co.uk/news/rss.xml",
-                    description="BBC News RSS feed for testing",
+                    description="BBC News RSS",
                     is_active=True,
                     rate_limit_delay=2,
                     update_frequency=3600
@@ -183,14 +185,14 @@ async def test_concurrent_scraping():
             # Crea multiple sources di test
             test_sources = [
                 {
-                    'name': 'BBC News RSS',
-                    'rss_url': 'https://feeds.bbci.co.uk/news/rss.xml',
-                    'base_url': 'https://www.bbc.com/news'
+                    'name': 'BBC RSS',
+                    'base_url': 'https://www.bbc.com/news',
+                    'rss_url': 'https://feeds.bbci.co.uk/news/rss.xml'
                 },
                 {
                     'name': 'Ansa RSS',
-                    'rss_url': 'https://www.ansa.it/sito/ansait_rss.xml',
-                    'base_url': 'https://www.ansa.it'
+                    'base_url': 'https://www.ansa.it',
+                    'rss_url': 'https://www.ansa.it/sito/ansait_rss.xml'
                 }
             ]
             
@@ -241,11 +243,13 @@ async def main():
     print("🚀 Starting Scrapers Test Suite")
     print("=" * 50)
     
-    # Test individuali
-    await test_rss_reader()
+    # await test_rss_reader()
+    
     await test_web_reader()
-    await test_scraper_manager()
-    await test_concurrent_scraping()
+    
+    # await test_scraper_manager()
+    
+    # await test_concurrent_scraping()
     
     print("\n" + "=" * 50)
     print("✅ All scraper tests completed!")

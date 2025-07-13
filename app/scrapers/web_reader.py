@@ -4,6 +4,7 @@ from urllib.parse import urljoin, urlparse
 import asyncio
 import re
 from dateutil import parser as date_parser
+from lxml import etree
 from bs4 import BeautifulSoup
 
 from .base import BaseReader, ScrapedArticle
@@ -25,6 +26,7 @@ class WebReader(BaseReader):
         self.date_selector = self.scraping_config.get('date_selector', 'time')
         self.author_selector = self.scraping_config.get('author_selector', '.author')
         self.summary_selector = self.scraping_config.get('summary_selector', '.summary')
+        self.tag_selector = self.scraping_config.get('tag_selector', '.tags, .categories')
         
         # Configurazione avanzata
         self.follow_pagination = self.scraping_config.get('follow_pagination', False)
@@ -79,9 +81,10 @@ class WebReader(BaseReader):
                 return []
             
             soup = BeautifulSoup(html_content, 'html.parser')
+            dom = etree.HTML(str(soup), parser=etree.HTMLParser())
             
             # Find article elements
-            article_elements = soup.select(self.article_list_selector)
+            article_elements = dom.xpath(self.article_list_selector)
             
             if not article_elements:
                 self.logger.warning(f"No articles found using selector: {self.article_list_selector}")
@@ -128,7 +131,7 @@ class WebReader(BaseReader):
             published_date = self._extract_date_by_selector(element, self.date_selector)
             
             # Extract tags (from classes or data attributes)
-            tags = self._extract_tags_from_element(element)
+            tags = self._extract_tags_from_element(element, self.tag_selector)
             
             # Create metadata
             metadata = {
@@ -145,7 +148,7 @@ class WebReader(BaseReader):
             
             article = ScrapedArticle(
                 title=self.clean_text(title),
-                content=self.clean_text(content),
+                content=self.clean_text(content if content is not None else ""),
                 url=url,
                 author=author,
                 published_date=published_date,
@@ -161,70 +164,121 @@ class WebReader(BaseReader):
             self.logger.error(f"Error parsing article element: {str(e)}")
             return None
     
-    def _extract_text_by_selector(self, element, selector: str) -> Optional[str]:
-        """Extract text using CSS selector"""
+    def __get_xml_node_by_selector(self, element, selector: str, multiple: bool = False) -> Optional[List[etree._Element]]:
+        """Get XML node by XPath selector"""
         try:
-            found_element = element.select_one(selector)
-            if found_element:
-                return found_element.get_text(strip=True)
+            found_element = element.xpath(selector)
+            
+            if found_element is None:
+                self.logger.debug(f"No element found for selector: {selector}")
+                return None
+            
+            if isinstance(found_element, list) and len(found_element) == 0:
+                self.logger.debug(f"No element found for selector: {selector}")
+                return None
+
+            found_element = [found_element[0]] if isinstance(found_element, list) and not multiple else found_element
+            
+            self.logger.debug(f"Found element: {found_element}({type(found_element)}) with selector: {selector}")
+
+            #print(type(found_element))
+            #print(dir(found_element))
+
+            return found_element
+        except Exception as e:
+            self.logger.debug(f"Error finding XML node with selector {selector}: {str(e)}")
             return None
+    
+    def _extract_text_by_selector(self, element : etree._Element, selector: str) -> Optional[str]:
+        """Extract text using XPath selector"""
+        try:
+            found_element = self.__get_xml_node_by_selector(element, selector)
+            if found_element is None:
+                return None
+
+            return found_element[0].text if len(found_element) > 0 else None
         except Exception as e:
             self.logger.debug(f"Error extracting text with selector {selector}: {str(e)}")
             return None
     
     def _extract_url_by_selector(self, element, selector: str, base_url: str) -> Optional[str]:
-        """Extract URL using CSS selector"""
+        """Extract url using XPath selector"""
         try:
-            found_element = element.select_one(selector)
-            if found_element:
-                href = found_element.get('href')
-                if href:
-                    # Make URL absolute
-                    if href.startswith('http'):
-                        return href
-                    else:
-                        return urljoin(base_url, href)
+            found_element = self.__get_xml_node_by_selector(element, selector)
+            if found_element is None:
+                return None
+
+            href = found_element[0].attrib.get('href', '?') if len(found_element) > 0 and found_element[0].attrib.has_key('href') else None
+            
+            #print(found_element.keys())
+            #print(found_element.get('href', '?'))
+            #print(found_element.items())
+            
+            if href is not None:
+                # Make URL absolute
+                if href.startswith('http'):
+                    return href
+                else:
+                    return urljoin(base_url, href)
             return None
         except Exception as e:
             self.logger.debug(f"Error extracting URL with selector {selector}: {str(e)}")
             return None
     
-    def _extract_date_by_selector(self, element, selector: str) -> Optional[dt.datetime]:
-        """Extract date using CSS selector"""
+    def _extract_date_by_selector(self, element : etree._Element, selector: str) -> Optional[dt.datetime]:
+        """Extract date using XPath selector"""
+        import parsedatetime
         try:
-            found_element = element.select_one(selector)
-            if found_element:
-                # Try datetime attribute first
-                date_str = found_element.get('datetime')
-                if not date_str:
-                    date_str = found_element.get_text(strip=True)
-                
-                if date_str:
+            found_element = self.__get_xml_node_by_selector(element, selector)
+            if found_element is None:
+                return None
+
+            # Try datetime attribute first
+            date_str = found_element[0].text if len(found_element) > 0 else None
+            
+            if date_str is not None:
+                try:
+                    # Try to parse as ISO format first
                     return date_parser.parse(date_str)
+                except ValueError:
+                    # If that fails, try parsedatetime
+                    cal = parsedatetime.Calendar()
+                    if date_str == '1 hr ago':
+                        date_str = '1 hrs ago'
+                    elif date_str == '1 day ago':
+                        date_str = '24 hrs ago'
+                    elif date_str == '2 days ago':
+                        date_str = '48 hrs ago'
+                    elif date_str == '3 days ago':
+                        date_str = '72 hrs ago'
+                    time_struct, parse_status = cal.parse(date_str)
+                    if parse_status == 0:
+                        return dt.datetime(*time_struct[:6], tzinfo=dt.timezone.utc)
+
             return None
         except Exception as e:
             self.logger.debug(f"Error extracting date with selector {selector}: {str(e)}")
             return None
     
-    def _extract_tags_from_element(self, element) -> List[str]:
+    def _extract_tags_from_element(self, element : etree._Element, selector: str) -> List[str]:
         """Extract tags from element classes and data attributes"""
         tags = []
+        try:
+            found_element = self.__get_xml_node_by_selector(element, selector, multiple=True)
         
-        # From CSS classes
-        classes = element.get('class', [])
-        for cls in classes:
-            if cls.startswith('tag-') or cls.startswith('category-'):
-                tags.append(cls.replace('tag-', '').replace('category-', ''))
+            if found_element is None:
+                return tags
         
-        # From data attributes
-        for attr, value in element.attrs.items():
-            if attr.startswith('data-tag') or attr.startswith('data-category'):
-                if isinstance(value, str):
-                    tags.append(value)
-                elif isinstance(value, list):
-                    tags.extend(value)
-        
-        return tags
+            # From data attributes
+            for elem in found_element:
+                value = elem.text
+                if value:
+                    tags.append(value.strip())                
+            
+            return tags
+        except Exception as e:
+            self.logger.debug(f"Error extracting date with selector {selector}: {str(e)}")
+            return tags
     
     async def _fetch_full_article_content(self, url: str) -> Optional[str]:
         """Fetch full content from article URL"""
@@ -234,11 +288,12 @@ class WebReader(BaseReader):
                 return None
             
             soup = BeautifulSoup(html_content, 'html.parser')
+            dom = etree.HTML(str(soup), parser=etree.HTMLParser())
             
             # Try to extract full content
-            content_elements = soup.select(self.content_selector)
+            content_elements = dom.xpath(self.content_selector)
             if content_elements:
-                content = ' '.join([elem.get_text() for elem in content_elements])
+                content = ' '.join([elem.text for elem in content_elements if elem.text is not None])
                 return self.clean_text(content)
             
             return None
@@ -255,12 +310,23 @@ class WebReader(BaseReader):
                 return []
             
             soup = BeautifulSoup(html_content, 'html.parser')
-            pagination_links = soup.select(self.pagination_selector)
-            
+            dom = etree.HTML(str(soup), parser=etree.HTMLParser())
+
             urls = []
-            for link in pagination_links:
-                href = link.get('href')
-                if href:
+            pagination_links = dom.xpath(self.pagination_selector)
+            if not pagination_links or len(pagination_links) == 0:
+                self.logger.warning(f"No pagination links found using selector: {self.pagination_selector}")
+                return urls
+            
+            # Extract href attributes            
+            for elem in pagination_links:
+                
+                if not isinstance(elem, etree._Element):
+                    self.logger.warning(f"Expected etree._Element, got {type(elem)}")
+                    continue
+                
+                href = str(elem.attrib.get('href', '?') if elem.attrib.has_key('href') else None)
+                if href is not None:
                     if href.startswith('http'):
                         urls.append(href)
                     else:
@@ -279,10 +345,15 @@ class WebReader(BaseReader):
             if not html_content:
                 return False
             
+            # Fetch the page
             soup = BeautifulSoup(html_content, 'html.parser')
             
+            # Convert to etree for XPath
+            dom = etree.HTML(str(soup), parser=etree.HTMLParser())
+            
             # Check if page has expected structure
-            article_elements = soup.select(self.article_list_selector)
+            # article_elements = soup.select(self.article_list_selector)
+            article_elements = dom.xpath(self.article_list_selector)
             
             if not article_elements:
                 self.logger.warning(f"No articles found using selector: {self.article_list_selector}")

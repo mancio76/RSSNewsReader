@@ -278,7 +278,15 @@ class RSSReader(BaseReader):
             if not rss_content:
                 return False
             
-            feed = feedparser.parse(rss_content)
+            # Parse RSS
+            try:
+                feed = feedparser.parse(rss_content)
+            except Exception as e:
+                self.logger.warning(f"Error parsing RSS articles: {str(e)}")
+                self.logger.info(f"Changing encoding to latin-1 and retrying...")
+                
+                rss_content = rss_content.encode('latin-1', 'ignore').decode('utf-8')
+                feed = feedparser.parse(rss_content)
             
             # Check if it's a valid feed
             if not hasattr(feed, 'entries'):
