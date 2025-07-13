@@ -41,5 +41,5 @@ class Tag(Base):
     
     def decrement_frequency(self):
         """Decrementa la frequenza del tag"""
-        if self.frequency > 0:
+        if self.frequency > 0: # type: ignore
             self.frequency -= 1

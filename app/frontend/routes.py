@@ -94,7 +94,7 @@ async def articles_list(
     query = db.query(Article).options(joinedload(Article.source))
     
     # Filtri
-    if source_id:
+    if source_id and source_id > 0:
         query = query.filter(Article.source_id == source_id)
     
     if search:
@@ -316,8 +316,8 @@ async def toggle_source(source_id: int, db: Session = Depends(get_db)):
     source = db.query(Source).filter(Source.id == source_id).first()
         
     if source:
-        source.is_active = not source.is_active
-        source.updated_date = dt.datetime.now(dt.timezone.utc)
+        source.is_active = not source.is_active # type: ignore
+        source.updated_date = dt.datetime.now(dt.timezone.utc) # type: ignore
         db.commit()
     
     return {"success": True, "is_active": source.is_active if source else False}
