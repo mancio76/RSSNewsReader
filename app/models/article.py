@@ -64,13 +64,13 @@ class Article(Base):
     
     def generate_content_hash(self):
         """Genera hash del contenuto per deduplicazione"""
-        if self.content:
+        if self.content is not None:
             content_clean = self.content.strip().lower()
             self.content_hash = hashlib.sha256(content_clean.encode()).hexdigest()
     
     def generate_url_hash(self):
         """Genera hash dell'URL canonico"""
-        if self.url:
+        if self.url is not None:
             # Rimuovi parametri di tracking comuni
             url_clean = self.url.split('?')[0].split('#')[0]
             self.url_hash = hashlib.sha256(url_clean.encode()).hexdigest()
@@ -85,8 +85,8 @@ class Article(Base):
             'author': self.author,
             'source_id': self.source_id,
             'source_name': self.source.name if self.source else None,
-            'published_date': self.published_date.isoformat() if self.published_date else None,
-            'scraped_date': self.scraped_date.isoformat() if self.scraped_date else None,
+            'published_date': self.published_date.isoformat() if self.published_date else None,  # type: ignore
+            'scraped_date': self.scraped_date.isoformat() if self.scraped_date else None, # type: ignore
             'word_count': self.word_count,
             'language': self.language,
             'sentiment_score': self.sentiment_score,

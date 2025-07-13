@@ -32,5 +32,5 @@ class ArticleTag(Base):
             'tag_id': self.tag_id,
             'confidence': self.confidence,
             'source': self.source,
-            'created_date': self.created_date.isoformat() if self.created_date else None
+            'created_date': self.created_date.isoformat() if self.created_date else None # type: ignore
         }
