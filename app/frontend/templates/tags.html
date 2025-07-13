@@ -1,0 +1,962 @@
+{% extends "base.html" %}
+
+{% block page_subtitle %}
+Gestisci tags e categorie per organizzare i contenuti
+{% endblock %}
+
+{% block content %}
+<!-- Header con azioni -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">Gestione Tags</h2>
+        <p class="text-gray-600 mt-1">{{ total_tags }} tags configurati in {{ categories|length }} categorie</p>
+    </div>
+    <div class="flex items-center space-x-2">
+        <!-- Export buttons -->
+        <button onclick="exportTags('csv')" class="bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+            <i class="fas fa-file-csv mr-1"></i>
+            CSV
+        </button>
+        <button onclick="showAddCategoryModal()" class="bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm mr-2">
+            <i class="fas fa-folder-plus mr-1"></i>
+            Nuova Categoria
+        </button>
+        <button onclick="showAddTagModal()" class="btn-primary">
+            <i class="fas fa-plus mr-2"></i>
+            Nuovo Tag
+        </button>
+    </div>
+</div>
+
+<!-- Filtri e ricerca -->
+<div class="card mb-6">
+    <div class="p-6">
+        <form method="get" class="flex flex-wrap items-end gap-4">
+            <div class="flex-1 min-w-64">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Ricerca Tag</label>
+                <input 
+                    type="text" 
+                    name="search" 
+                    placeholder="Cerca per nome tag..."
+                    value="{{ search_query or '' }}"
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                >
+            </div>
+            
+            <div class="min-w-48">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
+                <select 
+                    name="category_id" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                >
+                    <option value="">Tutte le categorie</option>
+                    {% for category in categories %}
+                    <option value="{{ category.id }}" {% if selected_category == category.id %}selected{% endif %}>
+                        {{ category.name }}
+                    </option>
+                    {% endfor %}
+                </select>
+            </div>
+            
+            <div class="min-w-32">
+                <label class="block text-sm font-medium text-gray-700 mb-2">Frequenza Min.</label>
+                <select 
+                    name="min_frequency" 
+                    class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                >
+                    <option value="1" {% if min_frequency == 1 %}selected{% endif %}>Tutte</option>
+                    <option value="2" {% if min_frequency == 2 %}selected{% endif %}>≥ 2</option>
+                    <option value="5" {% if min_frequency == 5 %}selected{% endif %}>≥ 5</option>
+                    <option value="10" {% if min_frequency == 10 %}selected{% endif %}>≥ 10</option>
+                    <option value="25" {% if min_frequency == 25 %}selected{% endif %}>≥ 25</option>
+                </select>
+            </div>
+            
+            <div class="flex gap-2">
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-search mr-2"></i>
+                    Filtra
+                </button>
+                <a href="/web/tags" class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    <i class="fas fa-times mr-2"></i>
+                    Reset
+                </a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Statistiche rapide -->
+<div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Tags Totali</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_tags }}</p>
+            </div>
+            <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-tags text-blue-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Categorie</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ categories|length }}</p>
+            </div>
+            <div class="w-12 h-12 bg-purple-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-folder text-purple-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Tags Automatici</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ auto_tags_count }}</p>
+            </div>
+            <div class="w-12 h-12 bg-green-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-robot text-green-600 text-xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="stat-card card p-6">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-sm font-medium">Tag più Usato</p>
+                <p class="text-lg font-bold text-gray-900 mt-1">
+                    {% if top_tag %}
+                        {{ top_tag.name }}
+                    {% else %}
+                        N/A
+                    {% endif %}
+                </p>
+            </div>
+            <div class="w-12 h-12 bg-orange-100 rounded-lg flex items-center justify-center">
+                <i class="fas fa-star text-orange-600 text-xl"></i>
+            </div>
+        </div>
+        {% if top_tag %}
+        <div class="mt-4 flex items-center text-sm">
+            <span class="text-orange-600 font-medium">{{ top_tag.frequency }}</span>
+            <span class="text-gray-600 ml-1">utilizzi</span>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    <!-- Lista Tags -->
+    <div class="lg:col-span-2">
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">
+                        Tags 
+                        {% if search_query %}per "{{ search_query }}"{% endif %}
+                        {% if selected_category %}in "{{ selected_category_name }}"{% endif %}
+                    </h3>
+                    <div class="flex items-center space-x-2">
+                        <select onchange="changeSortOrder(this.value)" class="text-sm border border-gray-300 rounded px-2 py-1">
+                            <option value="frequency_desc" {% if sort_by == 'frequency' and sort_order == 'desc' %}selected{% endif %}>
+                                Frequenza ↓
+                            </option>
+                            <option value="frequency_asc" {% if sort_by == 'frequency' and sort_order == 'asc' %}selected{% endif %}>
+                                Frequenza ↑
+                            </option>
+                            <option value="name_asc" {% if sort_by == 'name' and sort_order == 'asc' %}selected{% endif %}>
+                                Nome A-Z
+                            </option>
+                            <option value="name_desc" {% if sort_by == 'name' and sort_order == 'desc' %}selected{% endif %}>
+                                Nome Z-A
+                            </option>
+                        </select>
+                    </div>
+                </div>
+                <p class="text-sm text-gray-600 mt-1">
+                    {{ filtered_tags|length }} di {{ total_tags }} tags
+                </p>
+            </div>
+            
+            <!-- Lista tags -->
+            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                {% for tag in filtered_tags %}
+                <div class="p-4 hover:bg-gray-50 transition-colors">
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                                 style="background-color: {% if tag.category %}{{ tag.category.color }}20{% else %}#f3f4f6{% endif %}; color: {% if tag.category %}{{ tag.category.color }}{% else %}#6b7280{% endif %};">
+                                {% if tag.category and tag.category.icon %}
+                                    <i class="fas fa-{{ tag.category.icon }}"></i>
+                                {% else %}
+                                    #
+                                {% endif %}
+                            </div>
+                            <div>
+                                <div class="flex items-center space-x-2">
+                                    <h4 class="font-medium text-gray-900">{{ tag.name }}</h4>
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                                        {{ tag.frequency }}
+                                    </span>
+                                    {% if tag.tag_type == 'auto' %}
+                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                        <i class="fas fa-robot mr-1"></i>
+                                        Auto
+                                    </span>
+                                    {% endif %}
+                                </div>
+                                {% if tag.category %}
+                                <p class="text-sm text-gray-500">{{ tag.category.name }}</p>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="flex items-center space-x-2">
+                            <button onclick="editTag({{ tag.id }})" 
+                                    class="text-gray-400 hover:text-blue-600 transition-colors p-1">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            <button onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')" 
+                                    class="text-gray-400 hover:text-red-600 transition-colors p-1">
+                                <i class="fas fa-trash"></i>
+                            </button>
+                            <button onclick="viewTagArticles({{ tag.id }})" 
+                                    class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                Vedi Articoli
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+                
+                {% if not filtered_tags %}
+                <div class="p-12 text-center">
+                    <i class="fas fa-search text-gray-300 text-4xl mb-4"></i>
+                    <h3 class="text-lg font-medium text-gray-900 mb-2">Nessun tag trovato</h3>
+                    <p class="text-gray-500">
+                        {% if search_query or selected_category or min_frequency > 1 %}
+                        Prova a modificare i filtri di ricerca
+                        {% else %}
+                        Non ci sono tag disponibili al momento
+                        {% endif %}
+                    </p>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+    
+    <!-- Sidebar -->
+    <div class="space-y-6">
+        <!-- Word Cloud -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Word Cloud</h3>
+                    <button onclick="refreshWordCloud()" class="text-blue-600 hover:text-blue-700 text-sm">
+                        <i class="fas fa-sync-alt mr-1"></i>
+                        Aggiorna
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div id="wordcloud" class="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                    <div class="text-center">
+                        <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
+                        <p class="text-gray-500">Caricamento word cloud...</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- Categorie -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-lg font-semibold text-gray-900">Categorie</h3>
+                    <button onclick="showAddCategoryModal()" class="text-blue-600 hover:text-blue-700 text-sm">
+                        <i class="fas fa-plus mr-1"></i>
+                        Nuova
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    {% for category in categories %}
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-6 h-6 rounded flex items-center justify-center text-xs text-white font-bold"
+                                 style="background-color: {{ category.color }};">
+                                {% if category.icon %}
+                                    <i class="fas fa-{{ category.icon }}"></i>
+                                {% else %}
+                                    {{ category.name[0].upper() }}
+                                {% endif %}
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">{{ category.name }}</p>
+                                <p class="text-xs text-gray-500">{{ category.tag_count or 0 }} tags</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-1">
+                            <button onclick="editCategory({{ category.id }})" 
+                                    class="text-gray-400 hover:text-blue-600 transition-colors p-1">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                            <button onclick="deleteCategory({{ category.id }}, '{{ category.name }}')" 
+                                    class="text-gray-400 hover:text-red-600 transition-colors p-1">
+                                <i class="fas fa-trash text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not categories %}
+                    <div class="text-center py-8">
+                        <i class="fas fa-folder text-gray-300 text-3xl mb-3"></i>
+                        <p class="text-gray-500 text-sm">Nessuna categoria</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <!-- Statistiche Tag -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Top 10 Tags</h3>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3">
+                    {% for tag in top_tags[:10] %}
+                    <div class="flex items-center justify-between">
+                        <div class="flex items-center space-x-2">
+                            <span class="text-sm font-medium text-gray-900">{{ tag.name }}</span>
+                            {% if tag.category %}
+                            <span class="text-xs text-gray-500">({{ tag.category.name }})</span>
+                            {% endif %}
+                        </div>
+                        <span class="text-sm font-bold text-blue-600">{{ tag.frequency }}</span>
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Paginazione -->
+{% if total_pages > 1 %}
+<div class="flex items-center justify-between mt-6">
+    <div class="text-sm text-gray-600">
+        Pagina {{ current_page }} di {{ total_pages }}
+    </div>
+    
+    <div class="flex items-center space-x-2">
+        <!-- Previous -->
+        {% if current_page > 1 %}
+        <a href="?page={{ current_page - 1 }}{% if selected_category %}&category_id={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_frequency > 1 %}&min_frequency={{ min_frequency }}{% endif %}" 
+           class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors">
+            <i class="fas fa-chevron-left mr-1"></i>
+            Precedente
+        </a>
+        {% endif %}
+        
+        <!-- Page numbers -->
+        {% set start_page = [1, current_page - 2]|max %}
+        {% set end_page = [total_pages, current_page + 2]|min %}
+        
+        {% for page in range(start_page, end_page + 1) %}
+        {% if page == current_page %}
+        <span class="bg-blue-600 text-white font-medium py-2 px-3 rounded-lg">{{ page }}</span>
+        {% else %}
+        <a href="?page={{ page }}{% if selected_category %}&category_id={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_frequency > 1 %}&min_frequency={{ min_frequency }}{% endif %}" 
+           class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors">{{ page }}</a>
+        {% endif %}
+        {% endfor %}
+        
+        <!-- Next -->
+        {% if current_page < total_pages %}
+        <a href="?page={{ current_page + 1 }}{% if selected_category %}&category_id={{ selected_category }}{% endif %}{% if search_query %}&search={{ search_query }}{% endif %}{% if min_frequency > 1 %}&min_frequency={{ min_frequency }}{% endif %}" 
+           class="bg-white border border-gray-300 hover:bg-gray-50 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors">
+            Successiva
+            <i class="fas fa-chevron-right ml-1"></i>
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+<!-- Modal per Add Tag -->
+<div id="addTagModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Nuovo Tag</h3>
+                <button onclick="hideAddTagModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <form id="addTagForm" class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Tag *</label>
+                    <input type="text" name="name" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Es. tecnologia, sport...">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Categoria (opzionale)</label>
+                    <select name="category_id" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Nessuna categoria</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button type="button" onclick="hideAddTagModal()" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    Annulla
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Crea Tag
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal per Edit Tag -->
+<div id="editTagModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Modifica Tag</h3>
+                <button onclick="hideEditTagModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <form id="editTagForm" class="p-6">
+            <input type="hidden" name="tag_id" id="editTagId">
+            
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Tag *</label>
+                    <input type="text" name="name" id="editTagName" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Categoria (opzionale)</label>
+                    <select name="category_id" id="editTagCategory" 
+                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <option value="">Nessuna categoria</option>
+                        {% for category in categories %}
+                        <option value="{{ category.id }}">{{ category.name }}</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                
+                <div class="bg-gray-50 p-3 rounded-lg">
+                    <div class="text-sm text-gray-600">
+                        <div class="flex justify-between">
+                            <span>Frequenza:</span>
+                            <span id="editTagFrequency" class="font-medium">-</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Tipo:</span>
+                            <span id="editTagType" class="font-medium">-</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button type="button" onclick="hideEditTagModal()" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    Annulla
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-save mr-2"></i>
+                    Salva Modifiche
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- Modal per Add Category -->
+<div id="addCategoryModal" class="fixed inset-0 bg-black bg-opacity-50 z-50 hidden flex items-center justify-center">
+    <div class="bg-white rounded-lg max-w-md w-full mx-4">
+        <div class="p-6 border-b border-gray-200">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-semibold text-gray-900">Nuova Categoria</h3>
+                <button onclick="hideAddCategoryModal()" class="text-gray-400 hover:text-gray-600">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+        </div>
+        
+        <form id="addCategoryForm" class="p-6">
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Nome Categoria *</label>
+                    <input type="text" name="name" required 
+                           class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                           placeholder="Es. Tecnologia, Sport...">
+                </div>
+                
+                <div>
+                    <label class="block text-sm font-medium text-gray-700 mb-2">Descrizione</label>
+                    <textarea name="description" rows="2" 
+                              class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                              placeholder="Breve descrizione della categoria..."></textarea>
+                </div>
+                
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Colore</label>
+                        <input type="color" name="color" value="#3b82f6" 
+                               class="w-full h-10 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Icona FontAwesome</label>
+                        <input type="text" name="icon" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
+                               placeholder="tag, folder, star...">
+                        <p class="text-xs text-gray-500 mt-1">Solo nome icona (senza fa-)</p>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
+                <button type="button" onclick="hideAddCategoryModal()" 
+                        class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                    Annulla
+                </button>
+                <button type="submit" class="btn-primary">
+                    <i class="fas fa-plus mr-2"></i>
+                    Crea Categoria
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Dati dal backend (sostituire con dati reali)
+const tagsData = {{ top_tags | tojsonfilter | safe }};
+
+// Word Cloud rendering
+function renderWordCloud() {
+    const container = document.getElementById('wordcloud');
+    container.innerHTML = '';
+    
+    if (tagsData.length === 0) {
+        container.innerHTML = `
+            <div class="text-center">
+                <i class="fas fa-tags text-gray-300 text-4xl mb-3"></i>
+                <p class="text-gray-500">Nessun tag disponibile</p>
+            </div>
+        `;
+        return;
+    }
+    
+    const maxFreq = Math.max(...tagsData.map(tag => tag.frequency));
+    const minSize = 12;
+    const maxSize = 24;
+    
+    tagsData.slice(0, 25).forEach(tag => {
+        const size = minSize + (tag.frequency / maxFreq) * (maxSize - minSize);
+        const hue = Math.random() * 360;
+        
+        const tagElement = document.createElement('span');
+        tagElement.textContent = tag.name;
+        tagElement.className = 'inline-block m-1 p-1 cursor-pointer hover:opacity-80 transition-opacity';
+        tagElement.style.fontSize = `${size}px`;
+        tagElement.style.color = `hsl(${hue}, 70%, 50%)`;
+        tagElement.style.fontWeight = '600';
+        
+        tagElement.onclick = () => {
+            window.location.href = `/web/articles?search=${encodeURIComponent(tag.name)}`;
+        };
+        
+        container.appendChild(tagElement);
+    });
+}
+
+// Modal functions for Add Tag
+function showAddTagModal() {
+    document.getElementById('addTagModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideAddTagModal() {
+    document.getElementById('addTagModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('addTagForm').reset();
+}
+
+// Modal functions for Edit Tag
+function showEditTagModal() {
+    document.getElementById('editTagModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideEditTagModal() {
+    document.getElementById('editTagModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+}
+
+// Modal functions for Add Category
+function showAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.remove('hidden');
+    document.body.style.overflow = 'hidden';
+}
+
+function hideAddCategoryModal() {
+    document.getElementById('addCategoryModal').classList.add('hidden');
+    document.body.style.overflow = 'auto';
+    document.getElementById('addCategoryForm').reset();
+}
+
+// Edit tag
+async function editTag(tagId) {
+    try {
+        const response = await fetch(`/tags/${tagId}`);
+        if (!response.ok) {
+            showToast('Errore nel caricare i dati del tag', 'error');
+            return;
+        }
+        
+        const tag = await response.json();
+        
+        // Populate form
+        document.getElementById('editTagId').value = tag.id;
+        document.getElementById('editTagName').value = tag.name;
+        document.getElementById('editTagCategory').value = tag.category_id || '';
+        document.getElementById('editTagFrequency').textContent = tag.frequency;
+        document.getElementById('editTagType').textContent = tag.tag_type === 'auto' ? 'Automatico' : 'Manuale';
+        
+        showEditTagModal();
+        
+    } catch (error) {
+        console.error('Error loading tag:', error);
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Delete tag
+async function deleteTag(tagId, tagName) {
+    if (!confirm(`Sei sicuro di voler eliminare il tag "${tagName}"?\n\nTutte le associazioni con gli articoli verranno rimosse.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/tags/${tagId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Tag eliminato con successo', 'success');
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Delete category
+async function deleteCategory(categoryId, categoryName) {
+    if (!confirm(`Sei sicuro di voler eliminare la categoria "${categoryName}"?\n\nI tag associati diventeranno senza categoria.`)) {
+        return;
+    }
+    
+    try {
+        const response = await fetch(`/tags/categories/${categoryId}`, {
+            method: 'DELETE'
+        });
+        
+        if (response.ok) {
+            showToast('Categoria eliminata con successo', 'success');
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// View tag articles
+function viewTagArticles(tagId) {
+    // Redirect to articles page filtered by tag
+    window.location.href = `/web/articles?tag_id=${tagId}`;
+}
+
+// Edit category
+async function editCategory(categoryId) {
+    // TODO: Implement edit category modal and functionality
+    showToast('Funzionalità modifica categoria in sviluppo', 'info');
+}
+
+// Export tags
+async function exportTags(format) {
+    try {
+        showToast(`Preparazione export ${format.toUpperCase()}...`, 'info');
+        
+        const params = new URLSearchParams(window.location.search);
+        params.set('format', format);
+        
+        const response = await fetch(`/tags/export?${params}`, {
+            method: 'GET'
+        });
+        
+        if (response.ok) {
+            const data = await response.json();
+            
+            if (format === 'csv') {
+                downloadCSV(data.data, 'tags_export.csv');
+            } else {
+                downloadJSON(data, 'tags_export.json');
+            }
+            
+            showToast(`Export ${format.toUpperCase()} completato!`, 'success');
+        } else {
+            showToast('Errore durante l\'export', 'error');
+        }
+    } catch (error) {
+        console.error('Export error:', error);
+        showToast('Errore di connessione', 'error');
+    }
+}
+
+// Change sort order
+function changeSortOrder(value) {
+    const [sortBy, sortOrder] = value.split('_');
+    const params = new URLSearchParams(window.location.search);
+    params.set('sort_by', sortBy);
+    params.set('sort_order', sortOrder);
+    window.location.href = `${window.location.pathname}?${params}`;
+}
+
+// Refresh word cloud
+function refreshWordCloud() {
+    showToast('Aggiornamento word cloud...', 'info');
+    setTimeout(() => {
+        renderWordCloud();
+        showToast('Word cloud aggiornata!', 'success');
+    }, 1000);
+}
+
+// Form submissions
+document.getElementById('addTagForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        category_id: formData.get('category_id') ? parseInt(formData.get('category_id')) : null
+    };
+    
+    try {
+        showToast('Creazione tag in corso...', 'info');
+        
+        const response = await fetch('/tags/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Tag "${data.name}" creato con successo!`, 'success');
+            hideAddTagModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+document.getElementById('editTagForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const tagId = parseInt(formData.get('tag_id'));
+    const data = {
+        name: formData.get('name'),
+        category_id: formData.get('category_id') ? parseInt(formData.get('category_id')) : null
+    };
+    
+    try {
+        showToast('Modifica tag in corso...', 'info');
+        
+        const response = await fetch(`/tags/${tagId}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Tag "${data.name}" modificato con successo!`, 'success');
+            hideEditTagModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+document.getElementById('addCategoryForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const data = {
+        name: formData.get('name'),
+        description: formData.get('description') || null,
+        color: formData.get('color'),
+        icon: formData.get('icon') || null
+    };
+    
+    try {
+        showToast('Creazione categoria in corso...', 'info');
+        
+        const response = await fetch('/tags/categories/', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(data)
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Categoria "${data.name}" creata con successo!`, 'success');
+            hideAddCategoryModal();
+            location.reload();
+        } else {
+            const error = await response.json();
+            showToast(`Errore: ${error.detail}`, 'error');
+        }
+    } catch (error) {
+        showToast('Errore di connessione', 'error');
+    }
+});
+
+// Close modals on backdrop click
+document.getElementById('addTagModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddTagModal();
+    }
+});
+
+document.getElementById('editTagModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideEditTagModal();
+    }
+});
+
+document.getElementById('addCategoryModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideAddCategoryModal();
+    }
+});
+
+// Close modals on escape key
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        hideAddTagModal();
+        hideEditTagModal();
+        hideAddCategoryModal();
+    }
+});
+
+// Auto-submit form on filter change
+document.querySelector('select[name="category_id"]').addEventListener('change', function() {
+    this.form.submit();
+});
+
+document.querySelector('select[name="min_frequency"]').addEventListener('change', function() {
+    this.form.submit();
+});
+
+// Initialize word cloud
+renderWordCloud();
+
+// Utility functions
+function downloadCSV(data, filename) {
+    if (!data || data.length === 0) {
+        showToast('Nessun dato da esportare', 'error');
+        return;
+    }
+    
+    const headers = Object.keys(data[0]);
+    const csvContent = [
+        headers.join(','),
+        ...data.map(row => headers.map(header => `"${row[header] || ''}"`).join(','))
+    ].join('\n');
+    
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+function downloadJSON(data, filename) {
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+    const link = document.createElement('a');
+    link.href = URL.createObjectURL(blob);
+    link.download = filename;
+    link.click();
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + K per focus su search
+    if ((e.ctrlKey || e.metaKey) && e.key === 'k') {
+        e.preventDefault();
+        document.querySelector('input[name="search"]').focus();
+    }
+    
+    // Ctrl/Cmd + N per nuovo tag
+    if ((e.ctrlKey || e.metaKey) && e.key === 'n') {
+        e.preventDefault();
+        showAddTagModal();
+    }
+});
+</script>
+{% endblock %}

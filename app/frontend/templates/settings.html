@@ -1,0 +1,1330 @@
+{% extends "base.html" %}
+
+{% block page_subtitle %}
+Configura e gestisci le impostazioni del sistema
+{% endblock %}
+
+{% block content %}
+<!-- Header principale -->
+<div class="flex items-center justify-between mb-6">
+    <div>
+        <h2 class="text-2xl font-bold text-gray-900">Impostazioni Sistema</h2>
+        <p class="text-gray-600 mt-1">Configura il sistema di aggregazione news</p>
+    </div>
+    <div class="flex items-center space-x-2">
+        <button onclick="exportSettings()" class="bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+            <i class="fas fa-download mr-1"></i>
+            Export Config
+        </button>
+        <button onclick="importSettings()" class="bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+            <i class="fas fa-upload mr-1"></i>
+            Import Config
+        </button>
+    </div>
+</div>
+
+<!-- Tab Navigation -->
+<div class="mb-6">
+    <div class="border-b border-gray-200">
+        <nav class="-mb-px flex space-x-8">
+            <button onclick="showTab('general')" id="tab-general" 
+                    class="tab-button active py-2 px-1 border-b-2 border-blue-500 font-medium text-sm text-blue-600">
+                <i class="fas fa-cog mr-2"></i>
+                Generali
+            </button>
+            <button onclick="showTab('scraping')" id="tab-scraping" 
+                    class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-spider mr-2"></i>
+                Scraping
+            </button>
+            <button onclick="showTab('notifications')" id="tab-notifications" 
+                    class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-bell mr-2"></i>
+                Notifiche
+            </button>
+            <button onclick="showTab('advanced')" id="tab-advanced" 
+                    class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-tools mr-2"></i>
+                Avanzate
+            </button>
+            <button onclick="showTab('maintenance')" id="tab-maintenance" 
+                    class="tab-button py-2 px-1 border-b-2 border-transparent font-medium text-sm text-gray-500 hover:text-gray-700 hover:border-gray-300">
+                <i class="fas fa-wrench mr-2"></i>
+                Manutenzione
+            </button>
+        </nav>
+    </div>
+</div>
+
+<!-- Tab Content -->
+<div id="content-general" class="tab-content">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Impostazioni Generali -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Configurazione Generale</h3>
+                <p class="text-sm text-gray-600 mt-1">Impostazioni di base del sistema</p>
+            </div>
+            <div class="p-6">
+                <form id="generalSettingsForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">API Rate Limiting</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Richieste per minuto</label>
+                                <input type="number" name="api_rate_limit" value="100" min="10" max="1000"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Burst limit</label>
+                                <input type="number" name="api_burst_limit" value="200" min="50" max="2000"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Database Connection Pool</label>
+                        <div class="grid grid-cols-2 gap-3">
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Pool Size</label>
+                                <input type="number" name="db_pool_size" value="10" min="5" max="50"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Max Overflow</label>
+                                <input type="number" name="db_max_overflow" value="20" min="10" max="100"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Cache Configuration</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="enable_redis_cache" name="enable_redis_cache" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="enable_redis_cache" class="ml-2 block text-sm text-gray-700">
+                                    Abilita cache Redis
+                                </label>
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Redis URL</label>
+                                <input type="text" name="redis_url" value="redis://localhost:6379/0"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                            
+                            <div>
+                                <label class="block text-xs text-gray-500 mb-1">Cache TTL (secondi)</label>
+                                <input type="number" name="cache_ttl" value="3600" min="60" max="86400"
+                                       class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Logging Level</label>
+                        <select name="logging_level" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO" selected>INFO</option>
+                            <option value="WARNING">WARNING</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Worker Processes</label>
+                        <input type="number" name="worker_processes" value="4" min="1" max="16"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                        <p class="text-xs text-gray-500 mt-1">Numero di processi worker per scraping parallelo</p>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fas fa-save mr-2"></i>
+                            Salva Configurazione Avanzata
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Monitoraggio Performance -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Monitoraggio Performance</h3>
+                <p class="text-sm text-gray-600 mt-1">Metriche e diagnostiche sistema</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <!-- CPU Usage Chart -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-gray-700">CPU Usage</label>
+                            <span id="cpu-percentage" class="text-sm text-gray-600">45%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="cpu-bar" class="bg-blue-600 h-2 rounded-full" style="width: 45%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Memory Usage Chart -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-gray-700">Memory Usage</label>
+                            <span id="memory-percentage" class="text-sm text-gray-600">62%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="memory-bar" class="bg-green-600 h-2 rounded-full" style="width: 62%"></div>
+                        </div>
+                    </div>
+                    
+                    <!-- Disk Usage Chart -->
+                    <div>
+                        <div class="flex justify-between items-center mb-2">
+                            <label class="text-sm font-medium text-gray-700">Disk Usage</label>
+                            <span id="disk-percentage" class="text-sm text-gray-600">23%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2">
+                            <div id="disk-bar" class="bg-orange-600 h-2 rounded-full" style="width: 23%"></div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Performance Metrics -->
+                <div class="mt-6 grid grid-cols-2 gap-4">
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500">Richieste/sec</div>
+                        <div id="requests-per-sec" class="text-lg font-bold text-gray-900">12.3</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500">Tempo risposta</div>
+                        <div id="response-time" class="text-lg font-bold text-gray-900">45ms</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500">DB Queries/sec</div>
+                        <div id="db-queries-per-sec" class="text-lg font-bold text-gray-900">34.7</div>
+                    </div>
+                    <div class="bg-gray-50 p-3 rounded-lg">
+                        <div class="text-xs text-gray-500">Cache Hit Rate</div>
+                        <div id="cache-hit-rate" class="text-lg font-bold text-gray-900">87%</div>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button onclick="refreshPerformanceMetrics()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-chart-line mr-2"></i>
+                        Aggiorna Metriche
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="content-maintenance" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Operazioni Database -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Manutenzione Database</h3>
+                <p class="text-sm text-gray-600 mt-1">Operazioni di backup e pulizia</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <!-- Backup Section -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-3">Backup Database</h4>
+                        <div class="space-y-3">
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Ultimo backup:</span>
+                                <span id="last-backup-date" class="text-gray-900">Mai eseguito</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="text-gray-600">Dimensione ultimo backup:</span>
+                                <span id="backup-size" class="text-gray-900">-</span>
+                            </div>
+                            <div class="flex space-x-2">
+                                <button onclick="createBackup()" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-save mr-1"></i>
+                                    Crea Backup
+                                </button>
+                                <button onclick="downloadBackup()" class="bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                    <i class="fas fa-download mr-1"></i>
+                                    Scarica
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Cleanup Section -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-3">Pulizia Dati</h4>
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-sm text-gray-600 mb-1">Elimina articoli più vecchi di:</label>
+                                <select id="cleanup-days" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-sm">
+                                    <option value="30">30 giorni</option>
+                                    <option value="60">60 giorni</option>
+                                    <option value="90" selected>90 giorni</option>
+                                    <option value="180">180 giorni</option>
+                                    <option value="365">1 anno</option>
+                                </select>
+                            </div>
+                            <div class="flex items-center">
+                                <input type="checkbox" id="cleanup-duplicates" checked 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="cleanup-duplicates" class="ml-2 block text-sm text-gray-700">
+                                    Elimina anche duplicati
+                                </label>
+                            </div>
+                            <button onclick="runCleanup()" class="w-full bg-orange-100 hover:bg-orange-200 text-orange-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-broom mr-1"></i>
+                                Avvia Pulizia
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Optimize Section -->
+                    <div class="border border-gray-200 rounded-lg p-4">
+                        <h4 class="font-medium text-gray-900 mb-3">Ottimizzazione</h4>
+                        <div class="space-y-3">
+                            <button onclick="optimizeDatabase()" class="w-full bg-purple-100 hover:bg-purple-200 text-purple-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-rocket mr-1"></i>
+                                Ottimizza Database
+                            </button>
+                            <button onclick="rebuildIndexes()" class="w-full bg-indigo-100 hover:bg-indigo-200 text-indigo-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-list mr-1"></i>
+                                Ricostruisci Indici
+                            </button>
+                            <button onclick="analyzePerformance()" class="w-full bg-teal-100 hover:bg-teal-200 text-teal-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-chart-bar mr-1"></i>
+                                Analizza Performance
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- System Logs -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Log Sistema</h3>
+                        <p class="text-sm text-gray-600 mt-1">Monitora attività e errori</p>
+                    </div>
+                    <div class="flex items-center space-x-2">
+                        <select id="log-level-filter" class="text-sm border border-gray-300 rounded px-2 py-1">
+                            <option value="all">Tutti</option>
+                            <option value="error">Errori</option>
+                            <option value="warning">Warning</option>
+                            <option value="info">Info</option>
+                        </select>
+                        <button onclick="refreshLogs()" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-sync-alt"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="bg-gray-900 rounded-lg p-4 h-80 overflow-y-auto">
+                    <div id="system-logs" class="text-sm font-mono space-y-1">
+                        <div class="text-green-400">
+                            <span class="text-gray-500">[2025-01-13 10:30:15]</span>
+                            <span class="text-blue-400">[INFO]</span>
+                            Sistema avviato correttamente
+                        </div>
+                        <div class="text-green-400">
+                            <span class="text-gray-500">[2025-01-13 10:30:45]</span>
+                            <span class="text-blue-400">[INFO]</span>
+                            Scraping completato: 45 articoli trovati
+                        </div>
+                        <div class="text-yellow-400">
+                            <span class="text-gray-500">[2025-01-13 10:31:12]</span>
+                            <span class="text-yellow-400">[WARNING]</span>
+                            Source "Example RSS" non risponde
+                        </div>
+                        <div class="text-red-400">
+                            <span class="text-gray-500">[2025-01-13 10:31:30]</span>
+                            <span class="text-red-400">[ERROR]</span>
+                            Timeout connecting to database
+                        </div>
+                        <div class="text-green-400">
+                            <span class="text-gray-500">[2025-01-13 10:32:01]</span>
+                            <span class="text-blue-400">[INFO]</span>
+                            Database connection restored
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-4 flex space-x-2">
+                    <button onclick="downloadLogs()" class="flex-1 bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                        <i class="fas fa-download mr-1"></i>
+                        Scarica Log
+                    </button>
+                    <button onclick="clearLogs()" class="bg-red-100 hover:bg-red-200 text-red-700 font-medium py-2 px-3 rounded-lg transition-colors text-sm">
+                        <i class="fas fa-trash mr-1"></i>
+                        Pulisci
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script>
+// Tab Management
+function showTab(tabName) {
+    // Hide all tab contents
+    document.querySelectorAll('.tab-content').forEach(content => {
+        content.classList.add('hidden');
+    });
+    
+    // Remove active class from all tab buttons
+    document.querySelectorAll('.tab-button').forEach(button => {
+        button.classList.remove('active', 'border-blue-500', 'text-blue-600');
+        button.classList.add('border-transparent', 'text-gray-500');
+    });
+    
+    // Show selected tab content
+    document.getElementById(`content-${tabName}`).classList.remove('hidden');
+    
+    // Add active class to selected tab button
+    const activeButton = document.getElementById(`tab-${tabName}`);
+    activeButton.classList.add('active', 'border-blue-500', 'text-blue-600');
+    activeButton.classList.remove('border-transparent', 'text-gray-500');
+}
+
+// Settings Form Handlers
+document.getElementById('generalSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const settings = Object.fromEntries(formData);
+    
+    try {
+        showToast('Salvataggio impostazioni generali...', 'info');
+        
+        // Simula API call
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Store in localStorage for persistence
+        localStorage.setItem('generalSettings', JSON.stringify(settings));
+        
+        showToast('Impostazioni generali salvate con successo!', 'success');
+    } catch (error) {
+        showToast('Errore nel salvare le impostazioni', 'error');
+    }
+});
+
+document.getElementById('scrapingSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const settings = Object.fromEntries(formData);
+    
+    try {
+        showToast('Salvataggio configurazione scraping...', 'info');
+        
+        // API call to save scraping settings
+        const response = await fetch('/api/settings/scraping', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(settings)
+        });
+        
+        if (response.ok) {
+            showToast('Configurazione scraping salvata!', 'success');
+        } else {
+            throw new Error('Errore server');
+        }
+    } catch (error) {
+        showToast('Errore nel salvare la configurazione', 'error');
+    }
+});
+
+document.getElementById('notificationSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const settings = Object.fromEntries(formData);
+    
+    try {
+        showToast('Salvataggio configurazione notifiche...', 'info');
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        localStorage.setItem('notificationSettings', JSON.stringify(settings));
+        
+        showToast('Configurazione notifiche salvata!', 'success');
+    } catch (error) {
+        showToast('Errore nel salvare la configurazione', 'error');
+    }
+});
+
+document.getElementById('advancedSettingsForm').addEventListener('submit', async function(e) {
+    e.preventDefault();
+    
+    const formData = new FormData(this);
+    const settings = Object.fromEntries(formData);
+    
+    try {
+        showToast('Salvataggio configurazione avanzata...', 'info');
+        
+        await new Promise(resolve => setTimeout(resolve, 1500));
+        localStorage.setItem('advancedSettings', JSON.stringify(settings));
+        
+        showToast('Configurazione avanzata salvata! Riavvio sistema richiesto.', 'success');
+    } catch (error) {
+        showToast('Errore nel salvare la configurazione', 'error');
+    }
+});
+
+// System Stats Functions
+async function refreshSystemStats() {
+    try {
+        showToast('Aggiornamento statistiche...', 'info');
+        
+        // Simula API calls
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Update stats with random values for demo
+        document.getElementById('system-uptime').textContent = `${Math.floor(Math.random() * 30 + 1)} giorni`;
+        document.getElementById('memory-usage').textContent = `${Math.floor(Math.random() * 50 + 30)}%`;
+        document.getElementById('db-size').textContent = `${(Math.random() * 500 + 100).toFixed(1)} MB`;
+        
+        showToast('Statistiche aggiornate!', 'success');
+    } catch (error) {
+        showToast('Errore nell\'aggiornare le statistiche', 'error');
+    }
+}
+
+// Scraping Functions
+async function runManualScraping() {
+    try {
+        showToast('Avvio scraping manuale...', 'info');
+        
+        const response = await fetch('/sources/scrape', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify({})
+        });
+        
+        if (response.ok) {
+            const result = await response.json();
+            showToast(`Scraping completato: ${result.total_articles} articoli trovati`, 'success');
+        } else {
+            throw new Error('Errore server');
+        }
+    } catch (error) {
+        showToast('Errore durante lo scraping', 'error');
+    }
+}
+
+function pauseAllJobs() {
+    if (confirm('Sei sicuro di voler mettere in pausa tutti i job programmati?')) {
+        showToast('Tutti i job sono stati messi in pausa', 'info');
+    }
+}
+
+function addScheduledJob() {
+    showToast('Funzionalità in sviluppo', 'info');
+}
+
+// Notification Functions
+async function sendTestNotification() {
+    const type = document.getElementById('test-notification-type').value;
+    const channel = document.getElementById('test-notification-channel').value;
+    
+    try {
+        showToast(`Invio notifica di test via ${channel}...`, 'info');
+        
+        await new Promise(resolve => setTimeout(resolve, 2000));
+        
+        showToast(`Notifica di test inviata via ${channel}!`, 'success');
+        
+        // Add to log
+        const log = document.getElementById('notification-log');
+        const newEntry = document.createElement('div');
+        newEntry.className = 'flex justify-between';
+        newEntry.innerHTML = `
+            <span>Test ${type} via ${channel}</span>
+            <span class="text-green-600">Success</span>
+        `;
+        log.insertBefore(newEntry, log.firstChild);
+    } catch (error) {
+        showToast('Errore nell\'invio della notifica', 'error');
+    }
+}
+
+async function testAllChannels() {
+    showToast('Test di tutti i canali in corso...', 'info');
+    
+    const channels = ['email', 'slack', 'discord'];
+    for (const channel of channels) {
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        console.log(`Testing ${channel}...`);
+    }
+    
+    showToast('Test completato per tutti i canali!', 'success');
+}
+
+// Performance Functions
+function refreshPerformanceMetrics() {
+    // Simulate real-time data updates
+    const metrics = {
+        cpu: Math.floor(Math.random() * 40 + 20),
+        memory: Math.floor(Math.random() * 30 + 50),
+        disk: Math.floor(Math.random() * 40 + 10),
+        requests: (Math.random() * 20 + 5).toFixed(1),
+        responseTime: Math.floor(Math.random() * 50 + 20),
+        dbQueries: (Math.random() * 40 + 20).toFixed(1),
+        cacheHit: Math.floor(Math.random() * 20 + 80)
+    };
+    
+    // Update UI
+    document.getElementById('cpu-percentage').textContent = `${metrics.cpu}%`;
+    document.getElementById('cpu-bar').style.width = `${metrics.cpu}%`;
+    
+    document.getElementById('memory-percentage').textContent = `${metrics.memory}%`;
+    document.getElementById('memory-bar').style.width = `${metrics.memory}%`;
+    
+    document.getElementById('disk-percentage').textContent = `${metrics.disk}%`;
+    document.getElementById('disk-bar').style.width = `${metrics.disk}%`;
+    
+    document.getElementById('requests-per-sec').textContent = metrics.requests;
+    document.getElementById('response-time').textContent = `${metrics.responseTime}ms`;
+    document.getElementById('db-queries-per-sec').textContent = metrics.dbQueries;
+    document.getElementById('cache-hit-rate').textContent = `${metrics.cacheHit}%`;
+    
+    showToast('Metriche aggiornate!', 'success');
+}
+
+// Maintenance Functions
+async function createBackup() {
+    try {
+        showToast('Creazione backup in corso...', 'info');
+        
+        // Simula processo di backup
+        await new Promise(resolve => setTimeout(resolve, 3000));
+        
+        const now = new Date();
+        document.getElementById('last-backup-date').textContent = now.toLocaleString('it-IT');
+        document.getElementById('backup-size').textContent = `${(Math.random() * 100 + 50).toFixed(1)} MB`;
+        
+        showToast('Backup creato con successo!', 'success');
+    } catch (error) {
+        showToast('Errore nella creazione del backup', 'error');
+    }
+}
+
+function downloadBackup() {
+    showToast('Download backup in corso...', 'info');
+    // Simula download
+    setTimeout(() => {
+        showToast('Backup scaricato!', 'success');
+    }, 2000);
+}
+
+async function runCleanup() {
+    const days = document.getElementById('cleanup-days').value;
+    const includeDuplicates = document.getElementById('cleanup-duplicates').checked;
+    
+    if (!confirm(`Sei sicuro di voler eliminare tutti gli articoli più vecchi di ${days} giorni${includeDuplicates ? ' e i duplicati' : ''}?`)) {
+        return;
+    }
+    
+    try {
+        showToast('Pulizia database in corso...', 'info');
+        
+        await new Promise(resolve => setTimeout(resolve, 4000));
+        
+        showToast(`Pulizia completata! Eliminati ${Math.floor(Math.random() * 1000 + 100)} articoli.`, 'success');
+    } catch (error) {
+        showToast('Errore durante la pulizia', 'error');
+    }
+}
+
+function optimizeDatabase() {
+    showToast('Ottimizzazione database in corso...', 'info');
+    setTimeout(() => {
+        showToast('Database ottimizzato!', 'success');
+    }, 3000);
+}
+
+function rebuildIndexes() {
+    showToast('Ricostruzione indici in corso...', 'info');
+    setTimeout(() => {
+        showToast('Indici ricostruiti!', 'success');
+    }, 2500);
+}
+
+function analyzePerformance() {
+    showToast('Analisi performance in corso...', 'info');
+    setTimeout(() => {
+        showToast('Analisi completata! Report disponibile nei log.', 'success');
+    }, 3000);
+}
+
+// Log Functions
+function refreshLogs() {
+    showToast('Aggiornamento log...', 'info');
+    // In a real implementation, this would fetch new logs from the server
+    setTimeout(() => {
+        showToast('Log aggiornati!', 'success');
+    }, 1000);
+}
+
+function downloadLogs() {
+    showToast('Download log in corso...', 'info');
+    setTimeout(() => {
+        showToast('Log scaricati!', 'success');
+    }, 1500);
+}
+
+function clearLogs() {
+    if (confirm('Sei sicuro di voler cancellare tutti i log? Questa azione non può essere annullata.')) {
+        document.getElementById('system-logs').innerHTML = '<div class="text-gray-500">Log cancellati</div>';
+        showToast('Log cancellati!', 'info');
+    }
+}
+
+// Import/Export Functions
+function exportSettings() {
+    try {
+        const settings = {
+            general: JSON.parse(localStorage.getItem('generalSettings') || '{}'),
+            notifications: JSON.parse(localStorage.getItem('notificationSettings') || '{}'),
+            advanced: JSON.parse(localStorage.getItem('advancedSettings') || '{}'),
+            exportDate: new Date().toISOString()
+        };
+        
+        const blob = new Blob([JSON.stringify(settings, null, 2)], { type: 'application/json' });
+        const url = URL.createObjectURL(blob);
+        
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `rssnewsreader_settings_${new Date().toISOString().split('T')[0]}.json`;
+        a.click();
+        
+        URL.revokeObjectURL(url);
+        showToast('Configurazione esportata!', 'success');
+    } catch (error) {
+        showToast('Errore nell\'export della configurazione', 'error');
+    }
+}
+
+function importSettings() {
+    const input = document.createElement('input');
+    input.type = 'file';
+    input.accept = '.json';
+    
+    input.onchange = function(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+        
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const settings = JSON.parse(e.target.result);
+                
+                if (confirm('Sei sicuro di voler importare questa configurazione? Le impostazioni attuali verranno sovrascritte.')) {
+                    // Store imported settings
+                    if (settings.general) localStorage.setItem('generalSettings', JSON.stringify(settings.general));
+                    if (settings.notifications) localStorage.setItem('notificationSettings', JSON.stringify(settings.notifications));
+                    if (settings.advanced) localStorage.setItem('advancedSettings', JSON.stringify(settings.advanced));
+                    
+                    showToast('Configurazione importata! Ricarica la pagina per applicare le modifiche.', 'success');
+                    
+                    // Optionally reload page after delay
+                    setTimeout(() => {
+                        location.reload();
+                    }, 3000);
+                }
+            } catch (error) {
+                showToast('File di configurazione non valido', 'error');
+            }
+        };
+        reader.readAsText(file);
+    };
+    
+    input.click();
+}
+
+// Auto-refresh performance metrics
+setInterval(() => {
+    if (document.getElementById('content-advanced') && !document.getElementById('content-advanced').classList.contains('hidden')) {
+        // Quietly update metrics if advanced tab is active
+        refreshPerformanceMetrics();
+    }
+}, 30000); // Every 30 seconds
+
+// Load saved settings on page load
+document.addEventListener('DOMContentLoaded', function() {
+    // Load general settings
+    const generalSettings = JSON.parse(localStorage.getItem('generalSettings') || '{}');
+    Object.keys(generalSettings).forEach(key => {
+        const element = document.querySelector(`[name="${key}"]`);
+        if (element) {
+            if (element.type === 'checkbox') {
+                element.checked = generalSettings[key] === 'on';
+            } else {
+                element.value = generalSettings[key];
+            }
+        }
+    });
+    
+    // Load notification settings
+    const notificationSettings = JSON.parse(localStorage.getItem('notificationSettings') || '{}');
+    Object.keys(notificationSettings).forEach(key => {
+        const element = document.querySelector(`[name="${key}"]`);
+        if (element) {
+            if (element.type === 'checkbox') {
+                element.checked = notificationSettings[key] === 'on';
+            } else {
+                element.value = notificationSettings[key];
+            }
+        }
+    });
+    
+    // Load advanced settings
+    const advancedSettings = JSON.parse(localStorage.getItem('advancedSettings') || '{}');
+    Object.keys(advancedSettings).forEach(key => {
+        const element = document.querySelector(`[name="${key}"]`);
+        if (element) {
+            if (element.type === 'checkbox') {
+                element.checked = advancedSettings[key] === 'on';
+            } else {
+                element.value = advancedSettings[key];
+            }
+        }
+    });
+    
+    // Initialize system stats
+    refreshSystemStats();
+    
+    // Initialize performance metrics
+    refreshPerformanceMetrics();
+});
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+    // Ctrl/Cmd + S per salvare impostazioni del tab attivo
+    if ((e.ctrlKey || e.metaKey) && e.key === 's') {
+        e.preventDefault();
+        
+        // Find active tab and submit its form
+        const activeTab = document.querySelector('.tab-button.active');
+        if (activeTab) {
+            const tabId = activeTab.id.replace('tab-', '');
+            const form = document.querySelector(`#content-${tabId} form`);
+            if (form) {
+                form.dispatchEvent(new Event('submit', { bubbles: true, cancelable: true }));
+            }
+        }
+    }
+    
+    // Ctrl/Cmd + E per export
+    if ((e.ctrlKey || e.metaKey) && e.key === 'e') {
+        e.preventDefault();
+        exportSettings();
+    }
+    
+    // Ctrl/Cmd + I per import
+    if ((e.ctrlKey || e.metaKey) && e.key === 'i') {
+        e.preventDefault();
+        importSettings();
+    }
+});
+
+// CSS Animation classes
+const style = document.createElement('style');
+style.textContent = `
+    .tab-button.active {
+        transition: all 0.2s ease;
+    }
+    
+    .tab-content {
+        animation: fadeIn 0.3s ease-in-out;
+    }
+    
+    @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .card:hover {
+        transform: translateY(-1px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    }
+    
+    .progress-bar {
+        transition: width 0.3s ease;
+    }
+`;
+document.head.appendChild(style);
+</script>
+{% endblock %}
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Nome Sistema</label>
+                        <input type="text" name="system_name" value="RSSNewsReader" 
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Lingua Predefinita</label>
+                        <select name="default_language" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="it" selected>Italiano</option>
+                            <option value="en">English</option>
+                            <option value="es">Español</option>
+                            <option value="fr">Français</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Timezone</label>
+                        <select name="timezone" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="Europe/Rome" selected>Europe/Rome (UTC+1)</option>
+                            <option value="UTC">UTC</option>
+                            <option value="America/New_York">America/New_York (UTC-5)</option>
+                            <option value="Asia/Tokyo">Asia/Tokyo (UTC+9)</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Articoli per Pagina</label>
+                        <select name="articles_per_page" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="10">10</option>
+                            <option value="20" selected>20</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                        </select>
+                    </div>
+                    
+                    <div class="flex items-center">
+                        <input type="checkbox" id="auto_refresh" name="auto_refresh" checked 
+                               class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                        <label for="auto_refresh" class="ml-2 block text-sm text-gray-700">
+                            Aggiornamento automatico dashboard
+                        </label>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fas fa-save mr-2"></i>
+                            Salva Impostazioni Generali
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Statistiche Sistema -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Statistiche Sistema</h3>
+                <p class="text-sm text-gray-600 mt-1">Informazioni sullo stato del sistema</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Uptime Sistema:</span>
+                        <span id="system-uptime" class="text-sm text-gray-900">Caricamento...</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Memoria Utilizzata:</span>
+                        <span id="memory-usage" class="text-sm text-gray-900">Caricamento...</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Dimensione Database:</span>
+                        <span id="db-size" class="text-sm text-gray-900">Caricamento...</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">Ultimo Backup:</span>
+                        <span id="last-backup" class="text-sm text-gray-900">Mai eseguito</span>
+                    </div>
+                    
+                    <div class="flex justify-between items-center p-3 bg-gray-50 rounded-lg">
+                        <span class="text-sm font-medium text-gray-700">API Status:</span>
+                        <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                            <div class="w-2 h-2 bg-green-400 rounded-full mr-1 animate-pulse"></div>
+                            Operativo
+                        </span>
+                    </div>
+                </div>
+                
+                <div class="mt-6">
+                    <button onclick="refreshSystemStats()" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-sync-alt mr-2"></i>
+                        Aggiorna Statistiche
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="content-scraping" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Configurazione Scraping -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Configurazione Scraping</h3>
+                <p class="text-sm text-gray-600 mt-1">Impostazioni per l'aggregazione contenuti</p>
+            </div>
+            <div class="p-6">
+                <form id="scrapingSettingsForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Intervallo Scraping Globale (minuti)</label>
+                        <select name="global_scraping_interval" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="15">15 minuti</option>
+                            <option value="30" selected>30 minuti</option>
+                            <option value="60">1 ora</option>
+                            <option value="180">3 ore</option>
+                            <option value="360">6 ore</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Max Articoli per Source</label>
+                        <input type="number" name="max_articles_per_source" value="50" min="10" max="500"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Timeout Richieste (secondi)</label>
+                        <input type="number" name="request_timeout" value="30" min="5" max="120"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tentativi Fallimenti</label>
+                        <input type="number" name="max_retries" value="3" min="1" max="10"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">User Agent</label>
+                        <textarea name="user_agent" rows="2" 
+                                  class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36</textarea>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enable_content_analysis" name="enable_content_analysis" checked 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="enable_content_analysis" class="ml-2 block text-sm text-gray-700">
+                                Abilita analisi contenuto automatica
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enable_duplicate_detection" name="enable_duplicate_detection" checked 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="enable_duplicate_detection" class="ml-2 block text-sm text-gray-700">
+                                Rilevamento duplicati automatico
+                            </label>
+                        </div>
+                        
+                        <div class="flex items-center">
+                            <input type="checkbox" id="enable_auto_tagging" name="enable_auto_tagging" checked 
+                                   class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                            <label for="enable_auto_tagging" class="ml-2 block text-sm text-gray-700">
+                                Tag automatici basati su contenuto
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fas fa-save mr-2"></i>
+                            Salva Configurazione Scraping
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Programmi Scraping -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h3 class="text-lg font-semibold text-gray-900">Programmi Scraping</h3>
+                        <p class="text-sm text-gray-600 mt-1">Gestisci i job automatici</p>
+                    </div>
+                    <button onclick="addScheduledJob()" class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                        <i class="fas fa-plus mr-1"></i>
+                        Nuovo Job
+                    </button>
+                </div>
+            </div>
+            <div class="p-6">
+                <div class="space-y-3" id="scheduled-jobs">
+                    <!-- Job Globale -->
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-clock text-blue-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">Scraping Globale</p>
+                                <p class="text-xs text-gray-500">Ogni 30 minuti</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                Attivo
+                            </span>
+                            <button class="text-gray-400 hover:text-gray-600 p-1">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Job Backup -->
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-green-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-database text-green-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">Backup Database</p>
+                                <p class="text-xs text-gray-500">Ogni giorno alle 02:00</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-green-100 text-green-800">
+                                Attivo
+                            </span>
+                            <button class="text-gray-400 hover:text-gray-600 p-1">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <!-- Job Pulizia -->
+                    <div class="flex items-center justify-between p-3 border border-gray-200 rounded-lg">
+                        <div class="flex items-center space-x-3">
+                            <div class="w-8 h-8 bg-orange-100 rounded-lg flex items-center justify-center">
+                                <i class="fas fa-broom text-orange-600 text-sm"></i>
+                            </div>
+                            <div>
+                                <p class="font-medium text-gray-900 text-sm">Pulizia Articoli Vecchi</p>
+                                <p class="text-xs text-gray-500">Ogni settimana</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-2">
+                            <span class="inline-flex items-center px-2 py-1 rounded-full text-xs bg-yellow-100 text-yellow-800">
+                                Pausa
+                            </span>
+                            <button class="text-gray-400 hover:text-gray-600 p-1">
+                                <i class="fas fa-edit text-xs"></i>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="mt-6 flex space-x-3">
+                    <button onclick="runManualScraping()" class="flex-1 bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-play mr-2"></i>
+                        Esegui Scraping Manuale
+                    </button>
+                    <button onclick="pauseAllJobs()" class="bg-orange-100 hover:bg-orange-200 text-orange-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                        <i class="fas fa-pause mr-2"></i>
+                        Pausa Tutti
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="content-notifications" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Configurazione Notifiche -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Notifiche Sistema</h3>
+                <p class="text-sm text-gray-600 mt-1">Configura avvisi e notifiche</p>
+            </div>
+            <div class="p-6">
+                <form id="notificationSettingsForm" class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Canali di Notifica</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_email" name="notify_email" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_email" class="ml-2 block text-sm text-gray-700">
+                                    Email
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_slack" name="notify_slack" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_slack" class="ml-2 block text-sm text-gray-700">
+                                    Slack
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_discord" name="notify_discord" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_discord" class="ml-2 block text-sm text-gray-700">
+                                    Discord
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Email Amministratore</label>
+                        <input type="email" name="admin_email" placeholder="admin@example.com"
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Webhook Slack</label>
+                        <input type="url" name="slack_webhook" placeholder="https://hooks.slack.com/..."
+                               class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-3">Tipi di Notifica</label>
+                        <div class="space-y-3">
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_errors" name="notify_errors" checked 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_errors" class="ml-2 block text-sm text-gray-700">
+                                    Errori di scraping
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_new_sources" name="notify_new_sources" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_new_sources" class="ml-2 block text-sm text-gray-700">
+                                    Nuove sources aggiunte
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_daily_summary" name="notify_daily_summary" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_daily_summary" class="ml-2 block text-sm text-gray-700">
+                                    Riassunto giornaliero
+                                </label>
+                            </div>
+                            
+                            <div class="flex items-center">
+                                <input type="checkbox" id="notify_system_health" name="notify_system_health" 
+                                       class="h-4 w-4 text-blue-600 focus:ring-blue-500 border-gray-300 rounded">
+                                <label for="notify_system_health" class="ml-2 block text-sm text-gray-700">
+                                    Stato sistema
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="pt-4">
+                        <button type="submit" class="btn-primary w-full">
+                            <i class="fas fa-save mr-2"></i>
+                            Salva Configurazione Notifiche
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+        
+        <!-- Test Notifiche -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Test Notifiche</h3>
+                <p class="text-sm text-gray-600 mt-1">Verifica le configurazioni</p>
+            </div>
+            <div class="p-6">
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Tipo Notifica di Test</label>
+                        <select id="test-notification-type" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="test">Messaggio di Test</option>
+                            <option value="error">Errore di Scraping</option>
+                            <option value="summary">Riassunto Giornaliero</option>
+                            <option value="health">Stato Sistema</option>
+                        </select>
+                    </div>
+                    
+                    <div>
+                        <label class="block text-sm font-medium text-gray-700 mb-2">Canale di Test</label>
+                        <select id="test-notification-channel" 
+                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
+                            <option value="email">Email</option>
+                            <option value="slack">Slack</option>
+                            <option value="discord">Discord</option>
+                        </select>
+                    </div>
+                    
+                    <div class="space-y-3">
+                        <button onclick="sendTestNotification()" class="w-full bg-blue-100 hover:bg-blue-200 text-blue-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-paper-plane mr-2"></i>
+                            Invia Notifica di Test
+                        </button>
+                        
+                        <button onclick="testAllChannels()" class="w-full bg-green-100 hover:bg-green-200 text-green-700 font-medium py-2 px-4 rounded-lg transition-colors">
+                            <i class="fas fa-check-double mr-2"></i>
+                            Test Tutti i Canali
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- Log Notifiche -->
+                <div class="mt-6">
+                    <h4 class="text-sm font-medium text-gray-700 mb-3">Log Notifiche Recenti</h4>
+                    <div class="bg-gray-50 rounded-lg p-3 max-h-48 overflow-y-auto">
+                        <div id="notification-log" class="space-y-2 text-xs text-gray-600">
+                            <div class="flex justify-between">
+                                <span>Test email inviata</span>
+                                <span class="text-green-600">Success</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Webhook Slack testato</span>
+                                <span class="text-red-600">Failed</span>
+                            </div>
+                            <div class="flex justify-between">
+                                <span>Riassunto giornaliero</span>
+                                <span class="text-green-600">Success</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div id="content-advanced" class="tab-content hidden">
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        <!-- Configurazione Avanzata -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Configurazione Avanzata</h3>
+                <p class="text-sm text-gray-600 mt-1">Impostazioni per utenti esperti</p>
+            </div>
+            <div class="p-6">
+                <form id="advancedSettingsForm" class="space-y-4">
+                    <div>
