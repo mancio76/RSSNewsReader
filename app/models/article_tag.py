@@ -16,8 +16,12 @@ class ArticleTag(Base):
     created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc))
     
     # Relazioni
-    article = relationship("Article")
-    tag = relationship("Tag")
+    ## article = relationship("Article")
+    ## tag = relationship("Tag")
+    
+    # ✅ OPPURE se vuoi mantenere le relazioni dirette, cambia i nomi:
+    article_ref = relationship("Article", foreign_keys=[article_id])
+    tag_ref = relationship("Tag", foreign_keys=[tag_id])
     
     def __repr__(self):
         return f"<ArticleTag(article_id={self.article_id}, tag_id={self.tag_id}, confidence={self.confidence})>"
