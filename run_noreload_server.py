@@ -14,14 +14,30 @@ import logging
 
 # Aggiungi il percorso root al PYTHONPATH
 project_root = os.path.dirname(os.path.abspath(__file__))
+project_file = os.path.splitext(os.path.basename(__file__))[0]
 sys.path.insert(0, project_root)
 
 # Flag per controllo del server
 server_running = True
 server_starttime = dt.datetime.now(dt.timezone.utc)
-logger = logging.getLogger("server")
-logger.setLevel(logging.INFO)
-##handler = logging.StreamHandler(sys.stdout)
+logger = logging.getLogger(project_file)
+logging.config.fileConfig('logging.ini')
+fileHandler = logging.FileHandler(filename=f'{project_file}.log', encoding='utf-8')
+logger.addHandler(fileHandler)
+
+# create console handler and set level to debug
+##ch = logging.StreamHandler()
+##ch.setLevel(logging.DEBUG)
+
+# create formatter
+##formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+# add formatter to ch
+##ch.setFormatter(formatter)
+
+# add ch to logger
+##logger.addHandler(ch)
+
 logger.info(f"Server started at {server_starttime.isoformat()}")
 
 def signal_handler(signum, frame):
