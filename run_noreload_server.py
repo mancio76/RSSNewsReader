@@ -9,6 +9,8 @@ import uvicorn
 import signal
 import threading
 import time
+import datetime as dt
+import logging
 
 # Aggiungi il percorso root al PYTHONPATH
 project_root = os.path.dirname(os.path.abspath(__file__))
@@ -16,6 +18,11 @@ sys.path.insert(0, project_root)
 
 # Flag per controllo del server
 server_running = True
+server_starttime = dt.datetime.now(dt.timezone.utc)
+logger = logging.getLogger("server")
+logger.setLevel(logging.INFO)
+##handler = logging.StreamHandler(sys.stdout)
+logger.info(f"Server started at {server_starttime.isoformat()}")
 
 def signal_handler(signum, frame):
     global server_running
@@ -29,21 +36,27 @@ def keep_alive():
         while server_running:
             time.sleep(1)
     except KeyboardInterrupt:
+        logger.info("👋 Server stopped by user")
         print("\n👋 Server stopped by user")
         server_running = False
-
+        
+logger.info("🚀 Starting RSSNewsReader API...")
 print("🚀 Starting RSSNewsReader API...")
+logger.info(f"📂 Project root: {project_root}")
 print(f"📂 Project root: {project_root}")
 
 try:
+    logger.info("📦 Testing imports...")
     print("📦 Testing imports...")
     from app.api.main import app
+    logger.info("✅ Import successful!")
     print("✅ Import successful!")
     
     # Setup signal handlers
     signal.signal(signal.SIGINT, signal_handler)
     signal.signal(signal.SIGTERM, signal_handler)
     
+    logger.info("🌐 Starting server...")
     print("🌐 Starting server...")
     print("📚  Documentation: http://127.0.0.1:8000/docs")
     print("❤️  Health check: http://127.0.0.1:8000/health")

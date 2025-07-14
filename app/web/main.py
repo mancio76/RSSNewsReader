@@ -1,3 +1,4 @@
+import logging
 from fastapi import APIRouter, Request, Depends, Form, Query
 from fastapi.templating import Jinja2Templates
 from fastapi.responses import HTMLResponse
@@ -304,3 +305,18 @@ async def search_page(
         "total_count": total_count,
         "page_title": "Search"
     })
+
+@router.get("/logs")
+async def get_logs(request: Request, db: Session = Depends(get_db)):
+    """Elenco log """
+    
+    loggers = [logging.getLogger(name) for name in logging.root.manager.loggerDict]
+    print(f"Available loggers: {[logger.name for logger in loggers]}")
+    logger = logging.getLogger()
+    
+    return {
+        "loggers": loggers[0] if loggers and len(loggers) > 0 else None,
+        "timestamp": dt.datetime.now(dt.timezone.utc).isoformat(),
+        "level": "INFO",
+        "message": "Log retrieval not implemented"
+    }
