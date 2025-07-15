@@ -1,7 +1,8 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
 from .article_tag import ArticleTag
+import datetime as dt
 
 class Tag(Base):
     __tablename__ = 'tags'
@@ -14,13 +15,15 @@ class Tag(Base):
     category_id = Column(Integer, ForeignKey('categories.id'))
     
     # Statistiche
-    frequency = Column(Integer, default=1)  # numero di articoli con questo tag
+    frequency = Column(Integer, default=1, nullable=False)  # numero di articoli con questo tag
     
     # Tipo di tag
     tag_type = Column(String(20), default='manual')  # manual, auto, nlp
-    
+    created_date = Column(DateTime, default=dt.datetime.now(dt.timezone.utc))
+
     # Relazioni
     category = relationship("Category", back_populates="tags")
+    
     ## articles = relationship("Article", secondary="article_tags", back_populates="tags")
     # ✅ CORRETTO - Relazione many-to-many tramite association object
     articles = relationship("Article", ArticleTag.__tablename__, back_populates="tags")
@@ -35,7 +38,8 @@ class Tag(Base):
             'category_id': self.category_id,
             'category_name': self.category.name if self.category else None,
             'frequency': self.frequency,
-            'tag_type': self.tag_type
+            'tag_type': self.tag_type,
+            'created_date': self.created_date.isoformat() if self.created_date else None # type: ignore
         }
     
     def increment_frequency(self):

@@ -11,6 +11,7 @@ import threading
 import time
 import datetime as dt
 import logging
+import logging.config
 
 # Aggiungi il percorso root al PYTHONPATH
 project_root = os.path.dirname(os.path.abspath(__file__))

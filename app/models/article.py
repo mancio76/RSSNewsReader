@@ -47,7 +47,7 @@ class Article(Base):
     ##tags = relationship("Tag", secondary="article_tags", back_populates="articles")
     
      # ✅ CORRETTO - Relazione many-to-many tramite association object
-    tags = relationship("Tag", secondary=ArticleTag.__tablename__, back_populates="articles")
+    ##tags = relationship("Tag", secondary=ArticleTag.__tablename__, back_populates="articles")
 
     article_metadata = relationship("ArticleMetadata", back_populates="article", cascade="all, delete-orphan")
     versions = relationship("ArticleVersion", back_populates="article", cascade="all, delete-orphan")

@@ -169,17 +169,19 @@ class ScraperManager:
                     self.db.add(tag)
                     self.db.flush()
                 
-                # Crea associazione article-tag
-                article_tag = ArticleTag(
-                    article_id=article.id,
-                    tag_id=tag.id,
-                    confidence=0.8,
-                    source='scraper'
-                )
-                self.db.add(article_tag)
+                rel = self.db.query(ArticleTag).filter_by(article_id=article.id, tag_id=tag.id).first()
+                if not rel:
+                    # Crea associazione article-tag
+                    article_tag = ArticleTag(
+                        article_id=article.id,
+                        tag_id=tag.id,
+                        confidence=0.8,
+                        source='scraper'
+                    )
+                    self.db.add(article_tag)
                 
-                # Incrementa frequenza tag
-                tag.increment_frequency()
+                    # Incrementa frequenza tag
+                    tag.increment_frequency()
                 
         except Exception as e:
             self.logger.error(f"Error saving tags for article {article.id}: {str(e)}")

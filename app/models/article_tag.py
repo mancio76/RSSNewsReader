@@ -7,8 +7,9 @@ import datetime as dt
 class ArticleTag(Base):
     __tablename__ = 'article_tags'
     
-    article_id = Column(Integer, ForeignKey('articles.id'), primary_key=True)
-    tag_id = Column(Integer, ForeignKey('tags.id'), primary_key=True)
+    id = Column(Integer, primary_key=True)
+    article_id = Column(Integer, ForeignKey('articles.id'), nullable=False)
+    tag_id = Column(Integer, ForeignKey('tags.id'), nullable=False)
     
     # Metadati associazione
     confidence = Column(Float, default=1.0)  # confidenza se estratto automaticamente
@@ -24,10 +25,11 @@ class ArticleTag(Base):
     tag_ref = relationship("Tag", foreign_keys=[tag_id])
     
     def __repr__(self):
-        return f"<ArticleTag(article_id={self.article_id}, tag_id={self.tag_id}, confidence={self.confidence})>"
+        return f"<ArticleTag(id={self.id}, article_id={self.article_id}, tag_id={self.tag_id}, confidence={self.confidence})>"
     
     def to_dict(self):
         return {
+            'id': self.id,
             'article_id': self.article_id,
             'tag_id': self.tag_id,
             'confidence': self.confidence,
