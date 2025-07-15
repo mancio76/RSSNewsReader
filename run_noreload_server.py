@@ -1,4 +1,4 @@
-###!/usr/bin/env python3
+#!/usr/bin/env python3
 """
 Server senza reload per RSSNewsReader API
 """
