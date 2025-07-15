@@ -149,6 +149,27 @@ Panoramica generale del sistema di aggregazione news
     
     <!-- Sidebar -->
     <div class="space-y-8">
+        <!-- Quick Actions -->
+        <div class="card">
+            <div class="p-6 border-b border-gray-200">
+                <h3 class="text-lg font-semibold text-gray-900">Azioni Rapide</h3>
+            </div>
+            <div class="p-6 space-y-3">
+                <button onclick="triggerScraping()" class="w-full btn-primary flex items-center justify-center">
+                    <i class="fas fa-sync-alt mr-2"></i>
+                    Avvia Scraping
+                </button>
+                <a href="/web/sources" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <i class="fas fa-plus mr-2"></i>
+                    Aggiungi Source
+                </a>
+                <a href="/web/analytics" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
+                    <i class="fas fa-chart-line mr-2"></i>
+                    Vedi Analytics
+                </a>
+            </div>
+        </div>
+
         <!-- Top Sources -->
         <div class="card">
             <div class="p-6 border-b border-gray-200">
@@ -208,27 +229,6 @@ Panoramica generale del sistema di aggregazione news
                     </div>
                     {% endif %}
                 </div>
-            </div>
-        </div>
-        
-        <!-- Quick Actions -->
-        <div class="card">
-            <div class="p-6 border-b border-gray-200">
-                <h3 class="text-lg font-semibold text-gray-900">Azioni Rapide</h3>
-            </div>
-            <div class="p-6 space-y-3">
-                <button onclick="triggerScraping()" class="w-full btn-primary flex items-center justify-center">
-                    <i class="fas fa-sync-alt mr-2"></i>
-                    Avvia Scraping
-                </button>
-                <a href="/web/sources" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-                    <i class="fas fa-plus mr-2"></i>
-                    Aggiungi Source
-                </a>
-                <a href="/web/analytics" class="w-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors flex items-center justify-center">
-                    <i class="fas fa-chart-line mr-2"></i>
-                    Vedi Analytics
-                </a>
             </div>
         </div>
     </div>

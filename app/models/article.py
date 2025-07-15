@@ -3,7 +3,6 @@ from sqlalchemy.orm import relationship
 from .base import Base
 import datetime as dt
 import hashlib
-from .article_tag import ArticleTag
 
 class Article(Base):
     __tablename__ = 'articles'
@@ -44,11 +43,8 @@ class Article(Base):
     
     # Relazioni
     source = relationship("Source", back_populates="articles")
-    ##tags = relationship("Tag", secondary="article_tags", back_populates="articles")
+    tags = relationship("Tag", secondary="article_tags", back_populates="articles")
     
-     # ✅ CORRETTO - Relazione many-to-many tramite association object
-    ##tags = relationship("Tag", secondary=ArticleTag.__tablename__, back_populates="articles")
-
     article_metadata = relationship("ArticleMetadata", back_populates="article", cascade="all, delete-orphan")
     versions = relationship("ArticleVersion", back_populates="article", cascade="all, delete-orphan")
     

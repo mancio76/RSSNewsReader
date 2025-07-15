@@ -1,7 +1,6 @@
 from sqlalchemy import Column, Integer, String, DateTime, ForeignKey
 from sqlalchemy.orm import relationship
 from .base import Base
-from .article_tag import ArticleTag
 import datetime as dt
 
 class Tag(Base):
@@ -24,9 +23,7 @@ class Tag(Base):
     # Relazioni
     category = relationship("Category", back_populates="tags")
     
-    ## articles = relationship("Article", secondary="article_tags", back_populates="tags")
-    # ✅ CORRETTO - Relazione many-to-many tramite association object
-    articles = relationship("Article", ArticleTag.__tablename__, back_populates="tags")
+    articles = relationship("Article", secondary="article_tags", back_populates="tags")
     
     def __repr__(self):
         return f"<Tag(id={self.id}, name='{self.name}', frequency={self.frequency})>"

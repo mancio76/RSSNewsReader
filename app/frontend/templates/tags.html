@@ -9,7 +9,7 @@ Gestisci tags e categorie per organizzare i contenuti
 <div class="flex items-center justify-between mb-6">
     <div>
         <h2 class="text-2xl font-bold text-gray-900">Gestione Tags</h2>
-        <p class="text-gray-600 mt-1">{{ total_tags }} tags configurati in {{ categories|length }} categorie</p>
+        <p class="text-gray-600 mt-1">{{ total_tags_count }} tags configurati in {{ categories|length }} categorie</p>
     </div>
     <div class="flex items-center space-x-2">
         <!-- Export buttons -->
@@ -45,7 +45,7 @@ Gestisci tags e categorie per organizzare i contenuti
             
             <div class="min-w-48">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Categoria</label>
-                <select 
+                <select title="Seleziona categoria" 
                     name="category_id" 
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -60,7 +60,7 @@ Gestisci tags e categorie per organizzare i contenuti
             
             <div class="min-w-32">
                 <label class="block text-sm font-medium text-gray-700 mb-2">Frequenza Min.</label>
-                <select 
+                <select title="Seleziona frequenza minima"
                     name="min_frequency" 
                     class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                 >
@@ -92,7 +92,7 @@ Gestisci tags e categorie per organizzare i contenuti
         <div class="flex items-center justify-between">
             <div>
                 <p class="text-gray-600 text-sm font-medium">Tags Totali</p>
-                <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_tags }}</p>
+                <p class="text-3xl font-bold text-gray-900 mt-1">{{ total_tags_count }}</p>
             </div>
             <div class="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
                 <i class="fas fa-tags text-blue-600 text-xl"></i>
@@ -152,126 +152,133 @@ Gestisci tags e categorie per organizzare i contenuti
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Lista Tags -->
     <div class="lg:col-span-2">
-        <div class="card">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">
-                        Tags 
-                        {% if search_query %}per "{{ search_query }}"{% endif %}
-                        {% if selected_category %}in "{{ selected_category_name }}"{% endif %}
-                    </h3>
-                    <div class="flex items-center space-x-2">
-                        <select onchange="changeSortOrder(this.value)" class="text-sm border border-gray-300 rounded px-2 py-1">
-                            <option value="frequency_desc" {% if sort_by == 'frequency' and sort_order == 'desc' %}selected{% endif %}>
-                                Frequenza ↓
-                            </option>
-                            <option value="frequency_asc" {% if sort_by == 'frequency' and sort_order == 'asc' %}selected{% endif %}>
-                                Frequenza ↑
-                            </option>
-                            <option value="name_asc" {% if sort_by == 'name' and sort_order == 'asc' %}selected{% endif %}>
-                                Nome A-Z
-                            </option>
-                            <option value="name_desc" {% if sort_by == 'name' and sort_order == 'desc' %}selected{% endif %}>
-                                Nome Z-A
-                            </option>
-                        </select>
-                    </div>
-                </div>
-                <p class="text-sm text-gray-600 mt-1">
-                    {{ filtered_tags|length }} di {{ total_tags }} tags
-                </p>
-            </div>
-            
-            <!-- Lista tags -->
-            <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
-                {% for tag in filtered_tags %}
-                <div class="p-4 hover:bg-gray-50 transition-colors">
+        <div class="space-y-6">
+            <div class="card">
+                <div class="p-6 border-b border-gray-200">
                     <div class="flex items-center justify-between">
-                        <div class="flex items-center space-x-3">
-                            <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
-                                 style="background-color: {% if tag.category %}{{ tag.category.color }}20{% else %}#f3f4f6{% endif %}; color: {% if tag.category %}{{ tag.category.color }}{% else %}#6b7280{% endif %};">
-                                {% if tag.category and tag.category.icon %}
-                                    <i class="fas fa-{{ tag.category.icon }}"></i>
-                                {% else %}
-                                    #
-                                {% endif %}
-                            </div>
-                            <div>
-                                <div class="flex items-center space-x-2">
-                                    <h4 class="font-medium text-gray-900">{{ tag.name }}</h4>
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
-                                        {{ tag.frequency }}
-                                    </span>
-                                    {% if tag.tag_type == 'auto' %}
-                                    <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
-                                        <i class="fas fa-robot mr-1"></i>
-                                        Auto
-                                    </span>
-                                    {% endif %}
-                                </div>
-                                {% if tag.category %}
-                                <p class="text-sm text-gray-500">{{ tag.category.name }}</p>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
+                        <h3 class="text-lg font-semibold text-gray-900">
+                            Tags 
+                            {% if search_query %}per "{{ search_query }}"{% endif %}
+                            {% if selected_category %}in "{{ selected_category_name }}"{% endif %}
+                        </h3>
                         <div class="flex items-center space-x-2">
-                            <button onclick="editTag({{ tag.id }})" 
-                                    class="text-gray-400 hover:text-blue-600 transition-colors p-1">
-                                <i class="fas fa-edit"></i>
-                            </button>
-                            <button onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')" 
-                                    class="text-gray-400 hover:text-red-600 transition-colors p-1">
-                                <i class="fas fa-trash"></i>
-                            </button>
-                            <button onclick="viewTagArticles({{ tag.id }})" 
-                                    class="text-blue-600 hover:text-blue-700 text-sm font-medium">
-                                Vedi Articoli
-                            </button>
+                            <select title="Ordina per"
+                                onchange="changeSortOrder(this.value)" class="text-sm border border-gray-300 rounded px-2 py-1"
+                                >
+                                <option value="frequency_desc" {% if sort_by == 'frequency' and sort_order == 'desc' %}selected{% endif %}>
+                                    Frequenza ↓
+                                </option>
+                                <option value="frequency_asc" {% if sort_by == 'frequency' and sort_order == 'asc' %}selected{% endif %}>
+                                    Frequenza ↑
+                                </option>
+                                <option value="name_asc" {% if sort_by == 'name' and sort_order == 'asc' %}selected{% endif %}>
+                                    Nome A-Z
+                                </option>
+                                <option value="name_desc" {% if sort_by == 'name' and sort_order == 'desc' %}selected{% endif %}>
+                                    Nome Z-A
+                                </option>
+                            </select>
                         </div>
                     </div>
-                </div>
-                {% endfor %}
-                
-                {% if not filtered_tags %}
-                <div class="p-12 text-center">
-                    <i class="fas fa-search text-gray-300 text-4xl mb-4"></i>
-                    <h3 class="text-lg font-medium text-gray-900 mb-2">Nessun tag trovato</h3>
-                    <p class="text-gray-500">
-                        {% if search_query or selected_category or min_frequency > 1 %}
-                        Prova a modificare i filtri di ricerca
-                        {% else %}
-                        Non ci sono tag disponibili al momento
-                        {% endif %}
+                    <p class="text-sm text-gray-600 mt-1">
+                        {{ filtered_tags|length }} di {{ total_tags_count }} tags
                     </p>
                 </div>
-                {% endif %}
+                
+                <!-- Lista tags -->
+                <div class="divide-y divide-gray-200 max-h-96 overflow-y-auto">
+                    {% for tag in filtered_tags %}
+                    <div class="p-4 hover:bg-gray-50 transition-colors">
+                        <div class="flex items-center justify-between">
+                            <div class="flex items-center space-x-3">
+                                <div class="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold"
+                                    style="background-color: {% if tag.category %}{{ tag.category.color }}20{% else %}#f3f4f6{% endif %}; color: {% if tag.category %}{{ tag.category.color }}{% else %}#6b7280{% endif %};">
+                                    {% if tag.category and tag.category.icon %}
+                                        <i class="fas fa-{{ tag.category.icon }}"></i>
+                                    {% else %}
+                                        #
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="flex items-center space-x-2">
+                                        <h4 class="font-medium text-gray-900">{{ tag.name }}</h4>
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-blue-100 text-blue-800">
+                                            {{ tag.frequency }}
+                                        </span>
+                                        {% if tag.tag_type == 'auto' %}
+                                        <span class="inline-flex items-center px-2 py-0.5 rounded-full text-xs bg-green-100 text-green-800">
+                                            <i class="fas fa-robot mr-1"></i>
+                                            Auto
+                                        </span>
+                                        {% endif %}
+                                    </div>
+                                    {% if tag.category %}
+                                    <p class="text-sm text-gray-500">{{ tag.category.name }}</p>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="flex items-center space-x-2">
+                                <button title="Modifica"
+                                    onclick="editTag({{ tag.id }})" 
+                                    class="text-gray-400 hover:text-blue-600 transition-colors p-1"
+                                >
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                                <button title="Elimina" onclick="deleteTag({{ tag.id }}, '{{ tag.name }}')" 
+                                        class="text-gray-400 hover:text-red-600 transition-colors p-1">
+                                    <i class="fas fa-trash"></i>
+                                </button>
+                                <button title="Articoli" onclick="viewTagArticles({{ tag.id }})" 
+                                        class="text-blue-600 hover:text-blue-700 text-sm font-medium">
+                                    Vedi Articoli
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                    {% endfor %}
+                    
+                    {% if not filtered_tags %}
+                    <div class="p-12 text-center">
+                        <i class="fas fa-search text-gray-300 text-4xl mb-4"></i>
+                        <h3 class="text-lg font-medium text-gray-900 mb-2">Nessun tag trovato</h3>
+                        <p class="text-gray-500">
+                            {% if search_query or selected_category or min_frequency > 1 %}
+                            Prova a modificare i filtri di ricerca
+                            {% else %}
+                            Non ci sono tag disponibili al momento
+                            {% endif %}
+                        </p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            <!-- Word Cloud -->
+            <div class="card">
+                <div class="p-6 border-b border-gray-200">
+                    <div class="flex items-center justify-between">
+                        <h3 class="text-lg font-semibold text-gray-900">Word Cloud</h3>
+                        <button onclick="refreshWordCloud()" class="text-blue-600 hover:text-blue-700 text-sm">
+                            <i class="fas fa-sync-alt mr-1"></i>
+                            Aggiorna
+                        </button>
+                    </div>
+                </div>
+                <div class="p-6">
+                    <div id="wordcloud" class="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center">
+                        <div class="text-center">
+                            <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Caricamento word cloud...</p>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     </div>
     
     <!-- Sidebar -->
     <div class="space-y-6">
-        <!-- Word Cloud -->
-        <div class="card">
-            <div class="p-6 border-b border-gray-200">
-                <div class="flex items-center justify-between">
-                    <h3 class="text-lg font-semibold text-gray-900">Word Cloud</h3>
-                    <button onclick="refreshWordCloud()" class="text-blue-600 hover:text-blue-700 text-sm">
-                        <i class="fas fa-sync-alt mr-1"></i>
-                        Aggiorna
-                    </button>
-                </div>
-            </div>
-            <div class="p-6">
-                <div id="wordcloud" class="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                    <div class="text-center">
-                        <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
-                        <p class="text-gray-500">Caricamento word cloud...</p>
-                    </div>
-                </div>
-            </div>
-        </div>
         
         <!-- Categorie -->
         <div class="card">
@@ -303,11 +310,11 @@ Gestisci tags e categorie per organizzare i contenuti
                             </div>
                         </div>
                         <div class="flex items-center space-x-1">
-                            <button onclick="editCategory({{ category.id }})" 
+                            <button title="Modifica" onclick="editCategory({{ category.id }})" 
                                     class="text-gray-400 hover:text-blue-600 transition-colors p-1">
                                 <i class="fas fa-edit text-xs"></i>
                             </button>
-                            <button onclick="deleteCategory({{ category.id }}, '{{ category.name }}')" 
+                            <button title="Elimina" onclick="deleteCategory({{ category.id }}, '{{ category.name }}')" 
                                     class="text-gray-400 hover:text-red-600 transition-colors p-1">
                                 <i class="fas fa-trash text-xs"></i>
                             </button>
@@ -397,7 +404,7 @@ Gestisci tags e categorie per organizzare i contenuti
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">Nuovo Tag</h3>
-                <button onclick="hideAddTagModal()" class="text-gray-400 hover:text-gray-600">
+                <button title="Chiudi" onclick="hideAddTagModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -414,7 +421,7 @@ Gestisci tags e categorie per organizzare i contenuti
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Categoria (opzionale)</label>
-                    <select name="category_id" 
+                    <select title="Categoria" name="category_id" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                         <option value="">Nessuna categoria</option>
                         {% for category in categories %}
@@ -444,7 +451,7 @@ Gestisci tags e categorie per organizzare i contenuti
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">Modifica Tag</h3>
-                <button onclick="hideEditTagModal()" class="text-gray-400 hover:text-gray-600">
+                <button title="Chiudi" onclick="hideEditTagModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -456,13 +463,13 @@ Gestisci tags e categorie per organizzare i contenuti
             <div class="space-y-4">
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Nome Tag *</label>
-                    <input type="text" name="name" id="editTagName" required 
+                    <input title="Nome" type="text" name="name" id="editTagName" required 
                            class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                 </div>
                 
                 <div>
                     <label class="block text-sm font-medium text-gray-700 mb-2">Categoria (opzionale)</label>
-                    <select name="category_id" id="editTagCategory" 
+                    <select title="Categoria" name="category_id" id="editTagCategory" 
                             class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                         <option value="">Nessuna categoria</option>
                         {% for category in categories %}
@@ -505,7 +512,7 @@ Gestisci tags e categorie per organizzare i contenuti
         <div class="p-6 border-b border-gray-200">
             <div class="flex items-center justify-between">
                 <h3 class="text-lg font-semibold text-gray-900">Nuova Categoria</h3>
-                <button onclick="hideAddCategoryModal()" class="text-gray-400 hover:text-gray-600">
+                <button title="Chiudi" onclick="hideAddCategoryModal()" class="text-gray-400 hover:text-gray-600">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
@@ -530,13 +537,13 @@ Gestisci tags e categorie per organizzare i contenuti
                 <div class="grid grid-cols-2 gap-4">
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Colore</label>
-                        <input type="color" name="color" value="#3b82f6" 
+                        <input title="Colore" type="color" name="color" value="#3b82f6" 
                                class="w-full h-10 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500">
                     </div>
                     
                     <div>
                         <label class="block text-sm font-medium text-gray-700 mb-2">Icona FontAwesome</label>
-                        <input type="text" name="icon" 
+                        <input title="Icona FontAwesome" type="text" name="icon" 
                                class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-blue-500 focus:border-blue-500"
                                placeholder="tag, folder, star...">
                         <p class="text-xs text-gray-500 mt-1">Solo nome icona (senza fa-)</p>
@@ -545,11 +552,11 @@ Gestisci tags e categorie per organizzare i contenuti
             </div>
             
             <div class="flex justify-end space-x-3 mt-6 pt-6 border-t border-gray-200">
-                <button type="button" onclick="hideAddCategoryModal()" 
+                <button title="Chiudi" type="button" onclick="hideAddCategoryModal()" 
                         class="bg-gray-100 hover:bg-gray-200 text-gray-700 font-medium py-2 px-4 rounded-lg transition-colors">
                     Annulla
                 </button>
-                <button type="submit" class="btn-primary">
+                <button title="Crea" type="submit" class="btn-primary">
                     <i class="fas fa-plus mr-2"></i>
                     Crea Categoria
                 </button>

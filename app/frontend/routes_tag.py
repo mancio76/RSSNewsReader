@@ -171,7 +171,7 @@ async def get_detailed_tag_stats(db: Session = Depends(get_db)):
     """Get detailed tag statistics"""
     
     # Statistiche generali
-    total_tags = db.query(Tag).count()
+    total_tags_count = db.query(Tag).count()
     auto_tags = db.query(Tag).filter(Tag.tag_type == 'auto').count()
     manual_tags = db.query(Tag).filter(Tag.tag_type == 'manual').count()
     
@@ -209,7 +209,7 @@ async def get_detailed_tag_stats(db: Session = Depends(get_db)):
     
     return {
         "general_stats": {
-            "total_tags": total_tags,
+            "total_tags_count": total_tags_count,
             "auto_tags": auto_tags,
             "manual_tags": manual_tags,
             "uncategorized_tags": uncategorized_tags

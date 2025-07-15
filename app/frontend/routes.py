@@ -387,8 +387,8 @@ async def tags_management(
         query = query.order_by(sort_column)
     
     # Conteggio totale
-    total_tags = query.count()
-    total_pages = (total_tags + limit - 1) // limit
+    total_tags_count = query.count()
+    total_pages = (total_tags_count + limit - 1) // limit
     
     # Paginazione
     filtered_tags = query.offset(skip).limit(limit).all()
@@ -430,11 +430,11 @@ async def tags_management(
     
     return templates.TemplateResponse("tags.html", {
         "request": request,
-        "filtered_tags": filtered_tags,
-        "total_tags": total_tags_count,
+        "filtered_tags": [filtered_tag.to_dict() for filtered_tag in filtered_tags],
+        "total_tags_count": total_tags_count,
         "auto_tags_count": auto_tags_count,
-        "top_tag": top_tag,
-        "top_tags": top_tags,
+        "top_tag": top_tag.to_dict() if top_tag else None,
+        "top_tags": [top_tag.to_dict() for top_tag in top_tags],
         "categories": categories,
         "current_page": page,
         "total_pages": total_pages,
@@ -593,3 +593,32 @@ async def toggle_tag_frontend(tag_id: int, db: Session = Depends(get_db)):
         
     except Exception as e:
         return {"success": False, "error": str(e)}
+    
+@router.get("/tags/wordcloud")
+async def tags_wordcloud(request: Request, db: Session = Depends(get_db)):
+    """Genera wordcloud per i tag"""
+
+    import numpy as np
+    from PIL import Image
+    from wordcloud import WordCloud
+    import matplotlib.pyplot as plt
+    from nltk.corpus import stopwords
+
+    try:
+        # Recupera i tag con frequenza >= 2
+        tags = db.query(Tag).filter(Tag.frequency >= 2).order_by(desc(Tag.frequency)).all()
+        
+        # Prepara dati per wordcloud
+        wordcloud_data = [[tag.name, tag.frequency] for tag in tags]
+        
+        return templates.TemplateResponse("wordcloud.html", {
+            "request": request,
+            "wordcloud_data": wordcloud_data,
+            "page_title": "Wordcloud Tags"
+        })
+        
+    except Exception as e:
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Error generating wordcloud: {str(e)}"
+        )
