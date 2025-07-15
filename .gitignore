@@ -1,2 +1,7 @@
 data/database_old.db
 run_noreload_server.log
+app/__pycache__/
+api/routes/__pycache__/
+api/__pycache__/
+api/models/__pycache__/
+api/scrapers/__pycache__/
