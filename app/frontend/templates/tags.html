@@ -255,7 +255,7 @@ Gestisci tags e categorie per organizzare i contenuti
             </div>
 
             <!-- Word Cloud -->
-            <div class="card">
+            <div class="card" style="min-height: 30rem;">
                 <div class="p-6 border-b border-gray-200">
                     <div class="flex items-center justify-between">
                         <h3 class="text-lg font-semibold text-gray-900">Word Cloud</h3>
@@ -266,12 +266,11 @@ Gestisci tags e categorie per organizzare i contenuti
                     </div>
                 </div>
                 <div class="p-6">
-                    <div id="wordcloud" class="w-full h-64 bg-gray-50 rounded-lg flex items-center justify-center">
-                        <div class="text-center">
-                            <img src="./app/img/wordcloud.png" alt="Word Cloud" class="w-full h-full object-cover rounded-lg">
-                            <!-- <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i> -->
-                            <!-- <p class="text-gray-500">Caricamento word cloud...</p> -->
-                        </div>
+                    <div id="wordcloud" class="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
+                        <span id="wordcloudImageSpan" class="text-gray-400 text-sm" style="width: 100%; height: auto;">
+                            <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
+                            <p class="text-gray-500">Caricamento word cloud...</p>
+                        </span>
                     </div>
                 </div>
             </div>
@@ -575,8 +574,7 @@ const tagsData = {{ top_tags | tojsonfilter | safe }};
 // Word Cloud rendering
 async function renderWordCloud() {
     const container = document.getElementById('wordcloud');
-    container.innerHTML = '';
-    
+    const spanId = 'wordcloudImageSpan';
     try {
         const response = await fetch(`/tags/wordcloud/image`);
         if (!response.ok) {
@@ -586,47 +584,21 @@ async function renderWordCloud() {
         
         const tag = await response.json();
 
-        container.innerHTML = `
-            <img src="${tag.wordcloud_image}" alt="Word Cloud" class="w-full h-full object-cover rounded-lg">
-        `;
+        const imgSpan = document.createElement('span');
+        //imgUrl = url_for('img', filename = '' + tag.wordcloud_file);
+        imgSpan.id = spanId;
+        imgSpan.alt = 'Word Cloud';
+        imgSpan.className = 'w-full h-full flex items-center justify-center';
+        //imgSpan.style = 'width: 100%; height: 100%;';
+        imgSpan.innerHTML = tag.image_element;
+
+        container.removeChild(document.getElementById(spanId)); // Rimuove l'immagine precedente
+        container.appendChild(imgSpan);
         
     } catch (error) {
         console.error('Error loading tag:', error);
         showToast('Errore di connessione', 'error');
     }
-    return;
-
-    // if (tagsData.length === 0) {
-    //     container.innerHTML = `
-    //         <div class="text-center">
-    //             <i class="fas fa-tags text-gray-300 text-4xl mb-3"></i>
-    //             <p class="text-gray-500">Nessun tag disponibile</p>
-    //         </div>
-    //     `;
-    //     return;
-    // }
-    
-    // const maxFreq = Math.max(...tagsData.map(tag => tag.frequency));
-    // const minSize = 12;
-    // const maxSize = 24;
-    
-    // tagsData.slice(0, 25).forEach(tag => {
-    //     const size = minSize + (tag.frequency / maxFreq) * (maxSize - minSize);
-    //     const hue = Math.random() * 360;
-        
-    //     const tagElement = document.createElement('span');
-    //     tagElement.textContent = tag.name;
-    //     tagElement.className = 'inline-block m-1 p-1 cursor-pointer hover:opacity-80 transition-opacity';
-    //     tagElement.style.fontSize = `${size}px`;
-    //     tagElement.style.color = `hsl(${hue}, 70%, 50%)`;
-    //     tagElement.style.fontWeight = '600';
-        
-    //     tagElement.onclick = () => {
-    //         window.location.href = `/web/articles?search=${encodeURIComponent(tag.name)}`;
-    //     };
-        
-    //     container.appendChild(tagElement);
-    // });
 }
 
 // Modal functions for Add Tag

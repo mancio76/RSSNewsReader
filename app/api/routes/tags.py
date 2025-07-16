@@ -49,12 +49,12 @@ async def get_tags(
     
     return [
         TagResponse(
-            id=tag.id,
-            name=tag.name,
-            category_id=tag.category_id,
+            id=tag.id, # type: ignore
+            name=tag.name, # type: ignore
+            category_id=tag.category_id, # type: ignore
             category_name=tag.category.name if tag.category else None,
-            frequency=tag.frequency,
-            tag_type=tag.tag_type
+            frequency=tag.frequency, # type: ignore
+            tag_type=tag.tag_type # type: ignore
         )
         for tag in tags
     ]
@@ -72,12 +72,12 @@ async def get_tag(tag_id: int, db: Session = Depends(get_db)):
         )
     
     return TagResponse(
-        id=tag.id,
-        name=tag.name,
-        category_id=tag.category_id,
+        id=tag.id, # type: ignore
+        name=tag.name, # type: ignore
+        category_id=tag.category_id, # type: ignore
         category_name=tag.category.name if tag.category else None,
-        frequency=tag.frequency,
-        tag_type=tag.tag_type
+        frequency=tag.frequency, # type: ignore
+        tag_type=tag.tag_type # type: ignore
     )
 
 @router.post("/", response_model=TagResponse, status_code=status.HTTP_201_CREATED)
@@ -120,7 +120,7 @@ async def create_tag(tag_create: TagCreate, db: Session = Depends(get_db)):
             detail=f"Error creating tag: {str(e)}"
         )
     
-    return await get_tag(tag.id, db)
+    return await get_tag(tag.id, db) # type: ignore
 
 @router.put("/{tag_id}", response_model=TagResponse)
 async def update_tag(
@@ -157,9 +157,9 @@ async def update_tag(
             )
     
     # Aggiorna campi
-    tag.name = tag_update.name
-    tag.normalized_name = tag_update.name.lower()
-    tag.category_id = tag_update.category_id
+    tag.name = tag_update.name # type: ignore
+    tag.normalized_name = tag_update.name.lower() # type: ignore
+    tag.category_id = tag_update.category_id # type: ignore
     
     try:
         db.commit()
@@ -317,7 +317,10 @@ async def tags_wordcloud(
     ##import numpy as np
     ##from PIL import Image
     from wordcloud import WordCloud, STOPWORDS
-    import matplotlib.pyplot as plt
+    ##import matplotlib.pyplot as plt
+    import matplotlib.figure as Figure
+    import base64
+    from io import BytesIO
     ##from nltk.corpus import stopwords
 
     try:
@@ -330,7 +333,8 @@ async def tags_wordcloud(
 
 
         # Prepara dati per wordcloud
-        wordcloud_data = ' '.join([(tag.normalized_name + ' ') * tag.frequency for tag in tags])
+        frequent_tags = [(tag.normalized_name + ' ') * tag.frequency for tag in tags]
+        wordcloud_data = " ".join(frequent_tags) # type: ignore
         wc = WordCloud(stopwords=sw, max_words=50, background_color="white").generate(wordcloud_data)
 
         # Save the image in the img folder:
@@ -343,12 +347,23 @@ async def tags_wordcloud(
             os.remove(image_path)
 
         ##wc.to_file(image_path)
-        with plt.ioff():
-            plt.figure()
-            plt.imshow(wc, interpolation='bilinear')
-            plt.axis("off")
-            plt.savefig(image_path, format='png', bbox_inches='tight', pad_inches=0)
-            plt.close()
+        # with plt.ioff():
+        #     ##plt.figure()
+        #     plt.imshow(wc, interpolation='bilinear')
+        #     plt.axis("off")
+        #     plt.savefig(image_path, format='png', bbox_inches='tight', pad_inches=0)
+        #     plt.close()
+        
+        # Genera immagine senza visualizzazione (no pyplot)
+        fig = Figure.Figure(figsize=(8, 6))
+        ax = fig.subplots()
+        ax.axis("off")
+        ax.imshow(wc, interpolation='bilinear')
+        buf = BytesIO()
+        fig.savefig(buf, format='png', bbox_inches='tight', pad_inches=0)
+        
+        data = base64.b64encode(buf.getbuffer()).decode('ascii')
+        image_element = f'<img src="data:image/png;base64,{data}" alt="Tags Word Cloud" style="width: 100%; height: 100%;">'
 
         return {
             "max_tags": max_tags,
@@ -356,6 +371,7 @@ async def tags_wordcloud(
             "category_id": category_id,
             "wordcloud_image": image_path,
             "wordcloud_file": image_file,
+            "image_element": image_element,
         }
         
     except Exception as e:
@@ -466,21 +482,21 @@ async def get_tag_articles(
         tag_names = [t.name for t in article_tags]
         
         article_response = ArticleResponse(
-            id=article.id,
-            title=article.title,
-            content=article.content,
-            summary=article.summary,
-            url=article.url,
-            author=article.author,
-            source_id=article.source_id,
+            id=article.id, # type: ignore
+            title=article.title, # type: ignore
+            content=article.content, # type: ignore
+            summary=article.summary, # type: ignore
+            url=article.url, # type: ignore
+            author=article.author, # type: ignore
+            source_id=article.source_id, # type: ignore
             source_name=article.source.name if article.source else None,
-            published_date=article.published_date,
-            scraped_date=article.scraped_date,
-            word_count=article.word_count,
-            language=article.language,
-            sentiment_score=article.sentiment_score,
-            tags=tag_names,
-            is_duplicate=article.is_duplicate
+            published_date=article.published_date, # type: ignore
+            scraped_date=article.scraped_date, # type: ignore
+            word_count=article.word_count, # type: ignore
+            language=article.language, # type: ignore
+            sentiment_score=article.sentiment_score, # type: ignore
+            tags=tag_names, # type: ignore
+            is_duplicate=article.is_duplicate # type: ignore
         )
         article_responses.append(article_response)
     
@@ -579,7 +595,7 @@ async def merge_tags(
             
             if not existing:
                 # Sposta l'associazione
-                association.tag_id = target_tag_id
+                association.tag_id = target_tag_id # type: ignore
                 moved_associations += 1
             else:
                 # Elimina l'associazione duplicata
@@ -621,18 +637,18 @@ async def get_categories(db: Session = Depends(get_db)):
     
     for category in categories:
         category_dict[category.id] = CategoryResponse(
-            id=category.id,
-            name=category.name,
-            description=category.description,
-            parent_id=category.parent_id,
-            color=category.color,
-            icon=category.icon,
+            id=category.id, # type: ignore
+            name=category.name, # type: ignore
+            description=category.description, # type: ignore
+            parent_id=category.parent_id, # type: ignore
+            color=category.color, # type: ignore
+            icon=category.icon, # type: ignore
             children=[]
         )
     
     # Costruisci gerarchia
     for category in categories:
-        if category.parent_id:
+        if category.parent_id is not None:
             parent = category_dict.get(category.parent_id)
             if parent:
                 parent.children.append(category_dict[category.id])
@@ -682,12 +698,12 @@ async def create_category(category_create: CategoryCreate, db: Session = Depends
         )
     
     return CategoryResponse(
-        id=category.id,
-        name=category.name,
-        description=category.description,
-        parent_id=category.parent_id,
-        color=category.color,
-        icon=category.icon,
+        id=category.id, # type: ignore
+        name=category.name, # type: ignore
+        description=category.description, # type: ignore
+        parent_id=category.parent_id, # type: ignore
+        color=category.color, # type: ignore
+        icon=category.icon, # type: ignore
         children=[]
     )
 
@@ -726,11 +742,11 @@ async def update_category(
             )
     
     # Aggiorna campi
-    category.name = category_update.name
-    category.description = category_update.description
-    category.parent_id = category_update.parent_id
-    category.color = category_update.color
-    category.icon = category_update.icon
+    category.name = category_update.name # type: ignore
+    category.description = category_update.description # type: ignore
+    category.parent_id = category_update.parent_id # type: ignore
+    category.color = category_update.color # type: ignore
+    category.icon = category_update.icon # type: ignore
     
     try:
         db.commit()
@@ -743,12 +759,12 @@ async def update_category(
         )
     
     return CategoryResponse(
-        id=category.id,
-        name=category.name,
-        description=category.description,
-        parent_id=category.parent_id,
-        color=category.color,
-        icon=category.icon,
+        id=category.id, # type: ignore
+        name=category.name, # type: ignore
+        description=category.description, # type: ignore
+        parent_id=category.parent_id, # type: ignore
+        color=category.color, # type: ignore
+        icon=category.icon, # type: ignore
         children=[]
     )
 

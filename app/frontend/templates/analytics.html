@@ -33,7 +33,7 @@ Dashboard avanzata con grafici e statistiche dettagliate
 <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
     <!-- Word Cloud Container -->
     <div class="lg:col-span-2">
-        <div class="card">
+        <div class="card" style="min-height: 30rem;">
             <div class="p-6 border-b border-gray-200">
                 <div class="flex items-center justify-between">
                     <div>
@@ -47,11 +47,11 @@ Dashboard avanzata con grafici e statistiche dettagliate
                 </div>
             </div>
             <div class="p-6">
-                <div id="wordcloud" class="w-full h-80 bg-gray-50 rounded-lg flex items-center justify-center">
-                    <div class="text-center">
+                <div id="wordcloud" class="w-full h-full bg-gray-50 rounded-lg flex items-center justify-center">
+                    <span id="wordcloudImageSpan" class="text-gray-400 text-sm" style="width: 100%; height: auto;">
                         <i class="fas fa-cloud text-gray-300 text-4xl mb-3"></i>
                         <p class="text-gray-500">Caricamento word cloud...</p>
-                    </div>
+                    </span>
                 </div>
             </div>
         </div>
@@ -273,41 +273,42 @@ const languagesChart = new Chart(languagesCtx, {
 });
 
 // Word Cloud (simulato con div)
-function renderWordCloud() {
+async function renderWordCloud() {
     const container = document.getElementById('wordcloud');
-    container.innerHTML = '';
-    
-    if (tagsData.length === 0) {
-        container.innerHTML = `
-            <div class="text-center">
-                <i class="fas fa-tags text-gray-300 text-4xl mb-3"></i>
-                <p class="text-gray-500">Nessun tag disponibile</p>
-            </div>
-        `;
-        return;
+    const spanId = 'wordcloudImageSpan';
+    try {
+        const response = await fetch(`/tags/wordcloud/image`);
+        if (!response.ok) {
+            showToast('Errore nel creazione della word-cloud dei tag', 'error');
+            return;
+        }
+        
+        const tag = await response.json();
+
+        const imgSpan = document.createElement('span');
+        //imgUrl = url_for('img', filename = '' + tag.wordcloud_file);
+        imgSpan.id = spanId;
+        imgSpan.alt = 'Word Cloud';
+        imgSpan.className = 'w-full h-full flex items-center justify-center';
+        //imgSpan.style = 'width: 100%; height: 100%;';
+        imgSpan.innerHTML = tag.image_element;
+
+        container.removeChild(document.getElementById(spanId)); // Rimuove l'immagine precedente
+        container.appendChild(imgSpan);
+        
+    } catch (error) {
+        console.error('Error loading tag:', error);
+        showToast('Errore di connessione', 'error');
     }
-    
-    const maxFreq = Math.max(...tagsData.map(tag => tag[1]));
-    const minSize = 12;
-    const maxSize = 32;
-    
-    tagsData.slice(0, 30).forEach(([name, freq]) => {
-        const size = minSize + (freq / maxFreq) * (maxSize - minSize);
-        const hue = Math.random() * 360;
-        
-        const tagElement = document.createElement('span');
-        tagElement.textContent = name;
-        tagElement.className = 'inline-block m-1 p-1 cursor-pointer hover:opacity-80 transition-opacity';
-        tagElement.style.fontSize = `${size}px`;
-        tagElement.style.color = `hsl(${hue}, 70%, 50%)`;
-        tagElement.style.fontWeight = '600';
-        
-        tagElement.onclick = () => {
-            window.location.href = `/web/articles?search=${encodeURIComponent(name)}`;
-        };
-        
-        container.appendChild(tagElement);
-    });
+}
+
+// Refresh word cloud
+function refreshWordCloud() {
+    showToast('Aggiornamento word cloud...', 'info');
+    setTimeout(async function() {
+        await renderWordCloud();
+        showToast('Word cloud aggiornata!', 'success');
+    }, 1000);
 }
 
 // Initialize word cloud
