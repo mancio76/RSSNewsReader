@@ -1,5 +1,6 @@
 data/database_old.db
 run_noreload_server.log
+RSSNewReader.log
 app/*.pyc
 app/__pycache__/
 api/routes/__pycache__/
