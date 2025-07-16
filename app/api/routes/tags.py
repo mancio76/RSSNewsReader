@@ -340,8 +340,8 @@ async def tags_wordcloud(
 
         wordcloud_data = md.MultiDict()
         for tag in tags:
-            if tag.normalized_name:
-                wordcloud_data.add(tag.normalized_name, tag.frequency)   
+            if tag.normalized_name is not None:
+                wordcloud_data.add(tag.normalized_name, tag.frequency) # type: ignore
         wc = WordCloud(stopwords=sw, max_words=50, background_color="white").generate_from_frequencies(wordcloud_data)
 
         # Save the image in the img folder:
