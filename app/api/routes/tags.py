@@ -322,6 +322,7 @@ async def tags_wordcloud(
     import base64
     from io import BytesIO
     ##from nltk.corpus import stopwords
+    import multidict as md
 
     try:
         # Recupera i tag
@@ -333,9 +334,15 @@ async def tags_wordcloud(
 
 
         # Prepara dati per wordcloud
-        frequent_tags = [(tag.normalized_name + ' ') * tag.frequency for tag in tags]
-        wordcloud_data = " ".join(frequent_tags) # type: ignore
-        wc = WordCloud(stopwords=sw, max_words=50, background_color="white").generate(wordcloud_data)
+        # frequent_tags = [(tag.normalized_name + ' ') * tag.frequency for tag in tags]
+        # wordcloud_data = " ".join(frequent_tags) # type: ignore
+        # wc = WordCloud(stopwords=sw, max_words=50, background_color="white").generate(wordcloud_data)
+
+        wordcloud_data = md.MultiDict()
+        for tag in tags:
+            if tag.normalized_name:
+                wordcloud_data.add(tag.normalized_name, tag.frequency)   
+        wc = WordCloud(stopwords=sw, max_words=50, background_color="white").generate_from_frequencies(wordcloud_data)
 
         # Save the image in the img folder:
         image_file = "wordcloud.png"

@@ -23,26 +23,8 @@ sys.path.insert(0, project_root)
 # Flag per controllo del server
 server_running = True
 server_starttime = dt.datetime.now(dt.timezone.utc)
-logger = logging.getLogger(project_file)
 logging.config.fileConfig('logging.ini')
-fileHandler = logging.FileHandler(filename=f'{project_file}.log', encoding='utf-8')
-fileformatter = logging.Formatter('%(levelname)s:     %(asctime)s - %(name)s - %(message)s')
-fileHandler.setFormatter(fileformatter)
-logger.addHandler(fileHandler)
-
-# create console handler and set level to debug
-##ch = logging.StreamHandler()
-##ch.setLevel(logging.DEBUG)
-
-# create formatter
-##formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-
-# add formatter to ch
-##ch.setFormatter(formatter)
-
-# add ch to logger
-##logger.addHandler(ch)
-
+logger = logging.getLogger("root")
 logger.info(f"Server started at {server_starttime.isoformat()}")
 
 def signal_handler(signum, frame):

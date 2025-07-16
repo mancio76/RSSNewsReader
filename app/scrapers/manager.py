@@ -9,6 +9,8 @@ from .rss_reader import RSSReader
 from .web_reader import WebReader
 from app.models import Source, Article, Tag, ArticleTag, ArticleMetadata
 
+logging.config.fileConfig('logging.ini')
+
 class ScraperManager:
     """Manager per orchestrare tutti gli scrapers"""
     

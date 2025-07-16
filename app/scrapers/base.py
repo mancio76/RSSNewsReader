@@ -7,10 +7,11 @@ import aiohttp
 from dataclasses import dataclass
 
 # Configurazione logging
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
-)
+# logging.basicConfig(
+#     level=logging.INFO,
+#     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+# )
+logging.config.fileConfig('logging.ini')
 
 @dataclass
 class ScrapedArticle:

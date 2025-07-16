@@ -203,8 +203,10 @@ class RSSReader(BaseReader):
                 else:
                     tag_name = str(tag)
                 
-                if tag_name:
-                    tags.append(tag_name)
+                if ',' in tag_name:
+                    tags.extend([t.lower().strip() for t in tag_name.split(',') if t.strip()])
+                elif tag_name is not None:
+                    tags.append(tag_name.lower().strip())
         
         # Try category field
         if hasattr(entry, 'category'):
