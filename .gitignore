@@ -7,3 +7,7 @@ api/routes/__pycache__/
 api/__pycache__/
 api/models/__pycache__/
 api/scrapers/__pycache__/
+.DS_Store
+**/.DS_Store
+data/database_schema_only.sql
+data/database_dump.sql.gz
