@@ -8,8 +8,6 @@ import logging
 import time as tm
 import datetime as dt
 
-
-
 from .routes import articles, sources, tags, statistics
 from .models import ErrorResponse
 from ..models.base import create_tables
@@ -30,6 +28,9 @@ app = FastAPI(
     docs_url="/docs",
     redoc_url="/redoc"
 )
+
+# Monta directory static
+app.mount("/static", StaticFiles(directory="app/frontend/static"), name="static")
 
 # CORS middleware
 app.add_middleware(
