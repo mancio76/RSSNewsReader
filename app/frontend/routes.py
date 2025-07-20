@@ -231,7 +231,7 @@ async def analytics(request: Request, db: Session = Depends(get_db)):
     """Pagina analytics"""
     
     # Timeline ultimi 30 giorni
-    end_date = dt.datetime.now(dt.timezone.utc)
+    end_date = dt.datetime.now(dt.timezone.utc).date()
     start_date = end_date - dt.timedelta(days=30)
     
     timeline_data = db.query(
@@ -243,15 +243,20 @@ async def analytics(request: Request, db: Session = Depends(get_db)):
     
     # Converti in formato per Chart.js
     timeline = []
-    current_date = start_date.date()
     timeline_dict = {date: count for date, count in timeline_data}
     
-    while current_date <= end_date.date():
+    for i in range(len(timeline_dict)):
         timeline.append({
-            'date': current_date.isoformat(),
-            'articles': timeline_dict.get(current_date, 0)
+            'date': list(timeline_dict)[i],
+            'articles': list(timeline_dict.values())[i]
         })
-        current_date += dt.timedelta(days=1)
+    
+    # while current_date <= end_date:
+    #     timeline.append({
+    #         'date': current_date.isoformat(),
+    #         'articles': timeline_dict.get(current_date, -1)
+    #     })
+    #     current_date += dt.timedelta(days=1)
     
     # Sources performance
     sources_performance = db.query(

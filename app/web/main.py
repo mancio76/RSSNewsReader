@@ -237,7 +237,7 @@ async def analytics_page(request: Request, db: Session = Depends(get_db)):
     start_date = end_date - dt.timedelta(days=30)
     
     daily_stats = db.query(
-        func.date(Article.scraped_date).label('date'),
+        func.date(Article.scraped_date.date()).label('date'),
         func.count(Article.id).label('count')
     ).filter(
         Article.scraped_date >= start_date
